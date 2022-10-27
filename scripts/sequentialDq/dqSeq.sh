@@ -4,20 +4,20 @@ go build ../../
 read -p "User: " user
 read -s -p "Password: " password
 echo ""
-./goMortage -user $user -pw $password -specs /home/will/GolandProjects/goMortgagescripts/dq.spec
+./goMortgage -user $user -pw $password -specs /home/will/GolandProjects/goMortgage/scripts/dq.spec
 
-./goMortage -user $user -pw $password -specs /home/will/GolandProjects/goMortgagescripts/sequentialDq/dq2007.spec
-./goMortage -user $user -pw $password -specs /home/will/GolandProjects/goMortgagescripts/sequentialDq/dq2008.spec
-./goMortage -user $user -pw $password -specs /home/will/GolandProjects/goMortgagescripts/sequentialDq/dq2009.spec
-./goMortage -user $user -pw $password -specs /home/will/GolandProjects/goMortgagescripts/sequentialDq/dq2010.spec
-./goMortage -user $user -pw $password -specs /home/will/GolandProjects/goMortgagescripts/sequentialDq/dq2011.spec
-./goMortage -user $user -pw $password -specs /home/will/GolandProjects/goMortgagescripts/sequentialDq/dq2012.spec
-./goMortage -user $user -pw $password -specs /home/will/GolandProjects/goMortgagescripts/sequentialDq/dq2013.spec
-./goMortage -user $user -pw $password -specs /home/will/GolandProjects/goMortgagescripts/sequentialDq/dq2014.spec
-./goMortage -user $user -pw $password -specs /home/will/GolandProjects/goMortgagescripts/sequentialDq/dq2015.spec
-./goMortage -user $user -pw $password -specs /home/will/GolandProjects/goMortgagescripts/sequentialDq/dq2016.spec
-./goMortage -user $user -pw $password -specs /home/will/GolandProjects/goMortgagescripts/sequentialDq/dq2017.spec
-./goMortage -user $user -pw $password -specs /home/will/GolandProjects/goMortgagescripts/sequentialDq/dq2018.spec
-./goMortage -user $user -pw $password -specs /home/will/GolandProjects/goMortgagescripts/sequentialDq/dq2019.spec
-./goMortage -user $user -pw $password -specs /home/will/GolandProjects/goMortgagescripts/sequentialDq/dq2020.spec
+./goMortgage -user $user -pw $password -specs /home/will/GolandProjects/goMortgage/scripts/sequentialDq/dq2007.spec
+./goMortgage -user $user -pw $password -specs /home/will/GolandProjects/goMortgage/scripts/sequentialDq/dq2008.spec
+./goMortgage -user $user -pw $password -specs /home/will/GolandProjects/goMortgage/scripts/sequentialDq/dq2009.spec
+./goMortgage -user $user -pw $password -specs /home/will/GolandProjects/goMortgage/scripts/sequentialDq/dq2010.spec
+./goMortgage -user $user -pw $password -specs /home/will/GolandProjects/goMortgage/scripts/sequentialDq/dq2011.spec
+./goMortgage -user $user -pw $password -specs /home/will/GolandProjects/goMortgage/scripts/sequentialDq/dq2012.spec
+./goMortgage -user $user -pw $password -specs /home/will/GolandProjects/goMortgage/scripts/sequentialDq/dq2013.spec
+./goMortgage -user $user -pw $password -specs /home/will/GolandProjects/goMortgage/scripts/sequentialDq/dq2014.spec
+./goMortgage -user $user -pw $password -specs /home/will/GolandProjects/goMortgage/scripts/sequentialDq/dq2015.spec
+./goMortgage -user $user -pw $password -specs /home/will/GolandProjects/goMortgage/scripts/sequentialDq/dq2016.spec
+./goMortgage -user $user -pw $password -specs /home/will/GolandProjects/goMortgage/scripts/sequentialDq/dq2017.spec
+./goMortgage -user $user -pw $password -specs /home/will/GolandProjects/goMortgage/scripts/sequentialDq/dq2018.spec
+./goMortgage -user $user -pw $password -specs /home/will/GolandProjects/goMortgage/scripts/sequentialDq/dq2019.spec
+./goMortgage -user $user -pw $password -specs /home/will/GolandProjects/goMortgage/scripts/sequentialDq/dq2020.spec
 
