@@ -1,4 +1,4 @@
-module goMortgage
+module github.com/invertedv/goMortgage
 
 go 1.19
 

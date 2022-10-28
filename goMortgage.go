@@ -72,6 +72,9 @@ func main() {
 		}
 	}()
 
+	// TODO: this should not be needed
+	//	conn.Exec("set max_threads=6")
+
 	start := time.Now()
 
 	if specs["buildData"] == yes {
@@ -89,5 +92,3 @@ func main() {
 	elapsed := time.Since(start).Minutes()
 	logger(log, fmt.Sprintf("total run time: %0.1f minutes", elapsed), true)
 }
-
-//TODO: Stringer method for fit, prints params

@@ -525,6 +525,8 @@ func assess(pipe sea.Pipeline, specs specsMap, obsFt *sea.FType, segSpec *slices
 	return nil
 }
 
+// TODO: add implementation check after save
+
 // TODO: implement trim option in pipeline
 // TODO: in seafan build a set of queries to do CIs by strats
 // TODO: pass1Fields need to also keep stratify fields

@@ -18,7 +18,7 @@ econFields: zip3
 // model settings
 target: targetDq
 targetType: cat
-cat: purpose, propType, occ, amType, standard, nsDoc, nsUw, coBorr, hasSecond, aoPrior30, aoPrior60, aoPrior90p, harp, aoMod, aoBap, channel, covid, fcType, pPen//36
+cat: purpose, propType, occ, amType, standard, nsDoc, nsUw, coBorr, hasSecond, aoPrior30, aoPrior60, aoPrior90p, harp, aoMod, aoBap, channel, covid, fcType, pPen36
 cts: fico, trgAge, term, y20PropVal, units, dti, trgUnempRate, trgEltv, aoMonthsCur, trgPti50, trgRefiIncentive, lbrGrowth, spread, pMod
 emb:  aoDq: 5, state: 4, servMapped: 4
 addlCats: targetAssist, aoMaxDq12, vintage, aoDqCap6, fcstMonth, numBorr
@@ -27,7 +27,7 @@ layer2: FC(size:20, activation:relu)
 layer3: FC(size:10, activation:relu)
 layer4: FC(size:13, activation:softmax)
 batchSize: 5000
-epochs: 5 //2000
+epochs: 2000
 earlyStopping: 40
 learningRateStart: .0003
 learningRateEnd: .0001
@@ -36,7 +36,7 @@ validateQuery: SELECT %s FROM %s WHERE bucket in (10,11,12,13,14)
 assessQuery: SELECT %s FROM %s WHERE bucket in (15,16,17,18,19) 
 
 // output locations
-outDir: /home/will/goMortgage/dq
+outDir: /home/will/goMortgage/dq1
 pass1Strat: tmp.stratDq1
 pass1Sample: tmp.sampleDq1
 pass2Strat: tmp.stratDq2
