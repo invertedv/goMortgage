@@ -1,5 +1,6 @@
+title: Model Data Through 2010
 model: death
-buildData: yes
+buildData: no
 buildModel: yes
 
 // data settings
@@ -22,7 +23,6 @@ cts: trgAge, term, units, trgUnempRate, trgEltv, trgRefiIncentive, spread, d120,
 addlCats: targetAssist, targetDq, aoMaxDq12,fcstMonth, vintage, aoDqCap6, purpose, aoPrior30, aoPrior60, aoPrior90p, state, amType, aoDq, channel, servMapped
 addlKeep: lnId, fico, aoPropVal, dti, aoMonthsCur,lbrGrowth
 layer1: FC(size:20, activation:relu)
-//layer3: DropOut(0.1)
 layer2: FC(size:20, activation:relu)
 layer3: FC(size:3, activation:softmax)
 batchSize: 50000
@@ -31,12 +31,12 @@ earlyStopping: 40
 learningRateStart: .0005
 learningRateEnd: .00025
 l2Reg: 0.00005
-modelQuery: WITH d AS (SELECT %s FROM %s WHERE bucket < 10  limit 2500000) select * from d where 1=1   
-validateQuery: WITH d AS (SELECT %s FROM %s WHERE bucket in (10,11,12,13,14) limit 1250000) select * from d where 1=1   
-assessQuery: WITH d AS (SELECT %s FROM %s WHERE bucket in (15,16,17,18,19) limit 1250000) select * from d where 1=1   
+modelQuery: SELECT %s FROM %s WHERE bucket < 10 AND year(month) < 2011
+validateQuery: SELECT %s FROM %s WHERE bucket in (10,11,12,13,14) AND year(month) < 2011
+assessQuery: SELECT %s FROM %s WHERE bucket in (15,16,17,18,19)
 
 // output locations
-outDir: /home/will/goMortgage/defPpMinimalReRun
+outDir: /home/will/goMortgage/sequential/defPp/dq2011
 pass1Strat: tmp.stratDeath1
 pass1Sample: tmp.sampleDeath1
 pass2Strat: tmp.stratDeath2
@@ -45,17 +45,13 @@ modelTable: tmp.modelDeath
 //tmpDb: tmp.temp
 log: log.txt
 
-// save Assess Data + model output
-saveTable: tmp.outDefPpMinimal
-saveTableTargets: prepay: 1; default: 2
-
 // existing models that are inputs
 inputModel: mod
-modLocation: /home/will/goMortgage/mod/
+modLocation: /home/will/goMortgage/sequential/mod/mod2011
 modTargets: pModDirect:1
 
 inputModel: dq
-dqLocation: /home/will/goMortgage/dq
+dqLocation: /home/will/goMortgage/sequential/dq/dq2011
 dqTargets: d120: 4,5,6,7,8,9,10,11,12; current:0
 
 // assessment

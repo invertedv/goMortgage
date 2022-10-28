@@ -539,5 +539,3 @@ func assess(pipe sea.Pipeline, specs specsMap, obsFt *sea.FType, segSpec *slices
 // servicer, weighting, batchsize,
 
 // TODO: figure out why fcstMonth has to be a cat for curves to work
-
-// TODO: Create new seafan version FRIDAY

@@ -382,12 +382,12 @@ func (sf specsMap) inputModels() error {
 
 		modelName := v
 
-		loc, ok := sf[modelName+"Location"]
+		loc, ok := sf["location"+modelName]
 		if !ok {
 			return fmt.Errorf("(specsMap) inputModels: no location for model %s", modelName)
 		}
 
-		targets, ok := sf[modelName+"Targets"]
+		targets, ok := sf["targets"+modelName]
 		if !ok {
 			return fmt.Errorf("(specsMap) inputModels: no target for model %s", modelName)
 		}
@@ -618,7 +618,7 @@ func (sf specsMap) calcFields() []string {
 		if !strings.Contains(k, "inputModel") {
 			continue
 		}
-		targs := sf[fmt.Sprintf("%sTargets", v)]
+		targs := sf[fmt.Sprintf("targets%s", v)]
 		for _, trg := range strings.Split(targs, ";") {
 			each := strings.Split(trg, ":")
 			cFlds = append(cFlds, strings.ReplaceAll(each[0], " ", ""))

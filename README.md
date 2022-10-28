@@ -48,7 +48,7 @@ However, if memory does prove limiting, the data can be streamed to the model bu
 The output includes the model, diagnostics, a log file and the specs file the run used.
 <br><br>
 - **Data Build**<br>
-goMortgage will build the modeling dataset from source files.  
+goMortgage will build the modeling dataset from source files.
 <br><br>
 - **Go**<br>
 Go is a 21st century language.  This [post](https://yourbasic.org/golang/advantages-over-java-python/) has a nice

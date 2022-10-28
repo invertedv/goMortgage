@@ -116,4 +116,36 @@ is a comma-separated list of fields to treat as categorical. This may be needed 
 (see below) or because they are used as a slicer for curves.
 - addlKeep: field list<br>
 is a comma-separated list of additional fields to include in the 'saveTable'.  For instance, loan number.
-- 
+
+### Assessment Keys
+- assessAddl
+- keys are:
+    - assessName{name}: title
+    - assessTarget{name}: ints
+    - assessSlicer{name}: field
+
+### Curves Keys
+
+- curvesName{name}: title
+- curvesTarget{name}: ints
+- curvesSlicer{name}: field
+
+### General
+
+- log
+- show
+- plotHeight
+- plotWidth
+
+### Optional
+
+- title
+- addlCats
+- addlKeep
+- saving assessment data
+    - saveTable: 
+    - saveTableTargets:
+- input models.
+    - inputModel:
+    - {name}Location: path
+    - {name}Targets: 

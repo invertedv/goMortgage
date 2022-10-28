@@ -1,4 +1,4 @@
-title: Model Data Through 2007
+title: Model Data Through 2019
 model: dq
 buildData: no
 buildModel: yes
@@ -31,12 +31,12 @@ epochs: 2000
 earlyStopping: 40
 learningRateStart: .0003
 learningRateEnd: .0001
-modelQuery: SELECT %s FROM %s WHERE bucket < 10 AND year(month) < 2008
-validateQuery: SELECT %s FROM %s WHERE bucket in (10,11,12,13,14) AND year(month) < 2008
+modelQuery: SELECT %s FROM %s WHERE bucket < 10 AND year(month) < 2020
+validateQuery: SELECT %s FROM %s WHERE bucket in (10,11,12,13,14) AND year(month) < 2020
 assessQuery: SELECT %s FROM %s WHERE bucket in (15,16,17,18,19)
 
 // output locations
-outDir: /home/will/goMortgage/sequential/dq/dq2008
+outDir: /home/will/goMortgage/sequential/dq/dq2020
 pass1Strat: tmp.stratDq1
 pass1Sample: tmp.sampleDq1
 pass2Strat: tmp.stratDq2
@@ -45,9 +45,9 @@ modelTable: tmp.modelDq
 log: log.txt
 
 // existing models that are inputs
-inputModel: mod
-modLocation: /home/will/goMortgage/sequential/mod/mod2008
-modTargets: pMod:1
+inputModel: Mod
+locationMod: /home/will/goMortgage/sequential/mod/mod2020
+targetsMod: pMod:1
 
 // assessment
 assessAddl: aoIncome50, aoEItb50,  trgPti10, trgPti90, ltv, aoMaxDq12, trgUpbExp, state, aoIncome90, msaLoc, aoPropVal, trgPropVal, vintage
