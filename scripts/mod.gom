@@ -1,5 +1,6 @@
+title: Modifications Model
 model: mod
-buildData: yes
+buildData: no
 buildModel: yes
 
 // data settings
@@ -26,7 +27,7 @@ layer1: DropOut(.1)
 layer2: FC(size:20, activation:relu)
 layer3: FC(size:2, activation:softmax)
 batchSize: 5000
-epochs: 1000
+epochs: 5 //1000
 earlyStopping: 40
 learningRateStart: .0005
 learningRateEnd: .00025
@@ -35,7 +36,7 @@ validateQuery: SELECT %s FROM %s WHERE bucket in (10,11,12,13,14)
 assessQuery: SELECT %s FROM %s WHERE bucket in (15,16,17,18,19)
 
 // output locations
-outDir: /home/will/goMortgage/mod
+outDir: /home/will/goMortgage/modXXXXXXXXXXXXXXX
 pass1Strat: tmp.strat1Mod
 pass1Sample: tmp.sample1Mod
 pass2Strat: tmp.strat2Mod

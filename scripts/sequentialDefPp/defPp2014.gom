@@ -1,4 +1,4 @@
-title: Model Data Through 2008
+title: Model Data Through 2013
 model: death
 buildData: no
 buildModel: yes
@@ -20,8 +20,8 @@ target: targetDeath
 targetType: cat
 cat: propType, occ, standard, nsDoc, nsUw, coBorr, hasSecond, harp, aoMod, aoBap, canBe12, fcType, covid
 cts: trgAge, term, units, trgUnempRate, trgEltv, trgRefiIncentive, spread, d120, pModDirect, fcTime
-addlCats: targetAssist, targetDq, aoMaxDq12,fcstMonth, vintage, aoDqCap6, purpose, aoPrior30, aoPrior60, aoPrior90p, state, amType, aoDq, channel, servMapped
-addlKeep: lnId, fico, aoPropVal, dti, aoMonthsCur,lbrGrowth
+addlCats: targetAssist, targetDq, aoMaxDq12,fcstMonth, vintage, aoDqCap6, purpose, aoPrior30, aoPrior60, aoPrior90p, state, amType, aoDq, channel, servMapped, pPen36
+addlKeep: lnId, fico, aoPropVal, dti, aoMonthsCur,lbrGrowth, y20PropVal
 layer1: FC(size:20, activation:relu)
 layer2: FC(size:20, activation:relu)
 layer3: FC(size:3, activation:softmax)
@@ -31,12 +31,12 @@ earlyStopping: 40
 learningRateStart: .0005
 learningRateEnd: .00025
 l2Reg: 0.00005
-modelQuery: SELECT %s FROM %s WHERE bucket < 10 AND year(month) < 2009
-validateQuery: SELECT %s FROM %s WHERE bucket in (10,11,12,13,14) AND year(month) < 2009
+modelQuery: SELECT %s FROM %s WHERE bucket < 10 AND year(month) < 2014
+validateQuery: SELECT %s FROM %s WHERE bucket in (10,11,12,13,14) AND year(month) < 2014
 assessQuery: SELECT %s FROM %s WHERE bucket in (15,16,17,18,19)
 
 // output locations
-outDir: /home/will/goMortgage/sequential/defPp/dq2009
+outDir: /home/will/goMortgage/sequential/defPp/dq2014
 pass1Strat: tmp.stratDeath1
 pass1Sample: tmp.sampleDeath1
 pass2Strat: tmp.stratDeath2
@@ -46,13 +46,13 @@ modelTable: tmp.modelDeath
 log: log.txt
 
 // existing models that are inputs
-inputModel: mod
-modLocation: /home/will/goMortgage/sequential/mod/mod2009
-modTargets: pModDirect:1
+inputModel: Mod
+locationMod: /home/will/goMortgage/sequential/mod/mod2014
+targetsMod: pModDirect:1
 
-inputModel: dq
-dqLocation: /home/will/goMortgage/sequential/dq/dq2009
-dqTargets: d120: 4,5,6,7,8,9,10,11,12; current:0
+inputModel: Dq
+locationDq: /home/will/goMortgage/sequential/dq/dq2014
+targetsDq: d120: 4,5,6,7,8,9,10,11,12; current:0
 
 // assessment
 assessAddl: aoIncome50, aoEItb50, pPen, newPti90, newPti50, newPti10, trgPti10, trgPti90, ltv, aoMaxDq12, trgPti50, newPti50, expPti50, aoUpb, trgUpbExp, state, aoIncome90, fcstMonth, servMapped

@@ -42,20 +42,6 @@ func (sf specsMap) getQuery(table string) string {
 	return fmt.Sprintf(sf[key], flds, sf["modelTable"]) + " " // add trailing blank
 }
 
-// requiredKeys returns the keys required in the specs file for each type of model we can build.
-func (sf specsMap) requiredKeys() string {
-	switch sf["model"] {
-	case "mod", "dq", "death", "netpro":
-		return `mtgDb, econDb, pass1Strat, pass1Sample, pass2Strat,
-                    pass2Sample, log, mtgFields, econFields, modelTable,
-                    sampleSize1, strats1, sampleSize2, strats2, where1, where2, layer1,
-                    batchSize, epochs, earlyStopping, targetType,
-                    learningRateStart, learningRateEnd, modelQuery, validateQuery, assessQuery`
-	}
-
-	return ""
-}
-
 // get returns the value in sp
 func (sf specsMap) get(key string) string {
 	if val, ok := sf[key]; ok {
@@ -338,7 +324,6 @@ func (sf specsMap) saveTable() (tableName string, fields []string, targets [][]i
 	fields = make([]string, 0)
 	targets = make([][]int, 0)
 
-	// fTargs = strings.ReplaceAll(fTargs, " ", "")
 	fts := strings.Split(fTargs, ";")
 	for _, ft := range fts {
 		fldTarg := strings.Split(ft, ":")
@@ -436,12 +421,10 @@ func (sf specsMap) check(required string) error {
 			return fmt.Errorf("required key %s not in specs file", req)
 		}
 	}
-	switch sf["model"] {
-	case "mod", "dq", "death", "netpro":
-		return nil
-	default:
-		return fmt.Errorf("invalid model choice: %s", sf["model"])
-	}
+
+	sf["outDir"] = slash(sf["outDir"])
+
+	return nil
 }
 
 // ctsFeatures returns a slice of continuous features in the model
@@ -582,11 +565,6 @@ func (sf specsMap) allFields() []string {
 	aFld = append(aFld, sf.assessFields()...)
 	aFld = append(aFld, sf.addlCats()...)
 
-	//what was this?
-	//	if sf.targetType() != sea.FRCat {
-	//		aFld = append(aFld, sf.target())
-	//	}
-
 	aFld = append(aFld, sf.target())
 	for _, sl := range sf.slicer("curves") {
 		aFld = append(aFld, sl.feature)
@@ -660,7 +638,7 @@ func (sf specsMap) title() string {
 }
 
 // readSpecsMap reads the specfile and creates the specMap.
-func readSpecsMap(specFile, required string) (specsMap, error) {
+func readSpecsMap(specFile string) (specsMap, error) {
 	handle, e := os.Open(specFile)
 	if e != nil {
 		return nil, e
@@ -707,12 +685,6 @@ func readSpecsMap(specFile, required string) (specsMap, error) {
 		}
 		sMap[key] = strings.TrimLeft(kv[1], " ")
 	}
-	// all models need these
-	if e := sMap.check(required); e != nil {
-		return nil, e
-	}
-
-	sMap["outDir"] = slash(sMap["outDir"])
 
 	return sMap, nil
 }

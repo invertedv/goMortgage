@@ -14,8 +14,6 @@ import (
 	"strings"
 	"time"
 
-	"gonum.org/v1/gonum/stat"
-
 	grob "github.com/MetalBlueberry/go-plotly/graph_objects"
 
 	"github.com/invertedv/chutils"
@@ -24,7 +22,7 @@ import (
 )
 
 // minCount is the minimum # of rows a slice must have to make the assessment graphs
-const minCount = 1000
+const minCount = 0
 
 // modelSpec creates the NNModel model specification from the inputs.
 func modelSpec(specs specsMap) (modSpec sea.ModSpec, err error) {
@@ -54,6 +52,7 @@ func modelSpec(specs specsMap) (modSpec sea.ModSpec, err error) {
 
 // getModel either creates or loads the model to fit
 func getModel(specs specsMap, pipe sea.Pipeline) (*sea.NNModel, error) {
+	// path will be the path to a model whose values we'll use as starting values
 	path, ok := specs["startFrom"]
 
 	switch ok {
@@ -66,6 +65,7 @@ func getModel(specs specsMap, pipe sea.Pipeline) (*sea.NNModel, error) {
 		sea.WithCostFn(specs.costFunc())(nnModel)
 		sea.WithName(specs["model"])(nnModel)
 		return nnModel, nil
+
 	case false:
 		modSpec, e := modelSpec(specs)
 		if e != nil {
@@ -119,7 +119,6 @@ func model(specs specsMap, conn *chutils.Connect, log *os.File) error {
 		return e
 	}
 
-	//TODO: get fts from startFrom model
 	if modelPipe, e = newPipe(specs.getQuery("model"), "Modeling data", specs,
 		batchSize, getFts(specs), conn); e != nil {
 		return e
@@ -151,6 +150,7 @@ func model(specs specsMap, conn *chutils.Connect, log *os.File) error {
 
 	logger(log, fmt.Sprintf("\n\n%v", assessPipe), false)
 
+	// load model
 	nnModel, e := getModel(specs, modelPipe)
 	if e != nil {
 		return e
@@ -166,8 +166,10 @@ func model(specs specsMap, conn *chutils.Connect, log *os.File) error {
 	// fit model
 	fit := sea.NewFit(nnModel, epochs, modelPipe,
 		sea.WithValidation(valPipe, earlyStopping),
-		sea.WithLearnRate(startLR, endLR))
+		sea.WithLearnRate(startLR, endLR),
+		sea.WithOutFile(specs.modelRoot()))
 
+	// see if there is L2 regularization
 	l2, e := specs.l2()
 	if e != nil {
 		return e
@@ -182,11 +184,6 @@ func model(specs specsMap, conn *chutils.Connect, log *os.File) error {
 	}
 
 	sea.Verbose = false
-	nnModel = fit.NNModel() // it's possible the original nnModel is not valid if Do() had to recurse.
-
-	if e := nnModel.Save(specs.modelRoot()); e != nil {
-		return e
-	}
 
 	if e := plotCosts(fit, nnModel.Cost().Name(), specs); e != nil {
 		return e
@@ -194,6 +191,7 @@ func model(specs specsMap, conn *chutils.Connect, log *os.File) error {
 
 	logger(log, fmt.Sprintf("\n\nBest Epoch: %d", fit.BestEpoch()), true)
 
+	// plot curves
 	for _, curve := range specs.slicer("curves") {
 		sl := curve
 		if e := curves(assessPipe, specs, obsFt, &sl); e != nil {
@@ -201,6 +199,7 @@ func model(specs specsMap, conn *chutils.Connect, log *os.File) error {
 		}
 	}
 
+	// marginal and segPlot plots
 	for _, slice := range specs.slicer("assess") {
 		sl := slice // bad to pass for var as a pointer
 
@@ -216,6 +215,7 @@ func model(specs specsMap, conn *chutils.Connect, log *os.File) error {
 	elapsed := time.Since(start).Minutes()
 	logger(log, fmt.Sprintf("model build run time: %0.1f minutes", elapsed), true)
 
+	// save assess data & model values back to ClickHouse
 	if e := export(assessPipe, specs, obsFt, conn); e != nil {
 		return e
 	}
@@ -243,7 +243,7 @@ func curves(pipe sea.Pipeline, specs specsMap, obsFt *sea.FType, curveSpec *slic
 	}
 
 	modelLoc := specs["modelDir"] + "model"
-	// assess Fit
+
 	nnP, e := sea.PredictNN(modelLoc, pipe, false)
 	if e != nil {
 		return e
@@ -251,7 +251,7 @@ func curves(pipe sea.Pipeline, specs specsMap, obsFt *sea.FType, curveSpec *slic
 
 	nCat := nnP.OutputCols()
 
-	baseSl, e := sea.NewSlice(curveSpec.feature, minCount/10, pipe, nil)
+	baseSl, e := sea.NewSlice(curveSpec.feature, minCount, pipe, nil)
 	if e != nil {
 		return e
 	}
@@ -315,8 +315,6 @@ func curves(pipe sea.Pipeline, specs specsMap, obsFt *sea.FType, curveSpec *slic
 //   - val : feature slice on which to segment the output
 //   - baseFts: FType of the feature specified by val
 //   - fts : Ftypes of features in model.
-//
-// TODO: why is baseFTs separate?
 func marginal(specs specsMap, valSpec *slices, baseFt, obsFt *sea.FType, fts sea.FTypes, conn *chutils.Connect) error {
 	pd := &sea.PlotDef{
 		Show:     specs.plotShow(),
@@ -426,12 +424,12 @@ func assess(pipe sea.Pipeline, specs specsMap, obsFt *sea.FType, segSpec *slices
 
 	obs = sea.UnNormalize(obs, obsFt)
 
-	if e = pipe.GData().AppendField(sea.NewRawCast(fit, nil), "fit", sea.FRCts); e != nil {
-		return e
+	if e1 := pipe.GData().AppendField(sea.NewRawCast(fit, nil), "fit", sea.FRCts); e1 != nil {
+		return e1
 	}
 
-	if e = pipe.GData().AppendField(sea.NewRawCast(obs, nil), "obs", sea.FRCts); e != nil {
-		return e
+	if e1 := pipe.GData().AppendField(sea.NewRawCast(obs, nil), "obs", sea.FRCts); e1 != nil {
+		return e1
 	}
 
 	xy, e := sea.NewXY(fit, obs)
@@ -442,15 +440,13 @@ func assess(pipe sea.Pipeline, specs specsMap, obsFt *sea.FType, segSpec *slices
 	switch obsFt.Role {
 	case sea.FRCat:
 		pd.Title, pd.FileName = fmt.Sprintf("%s<br>KS-%s", specs.title(), segSpec.name), graphDir+"ksAll.html"
-		ks, _, _, e := sea.KS(xy, pd)
-		if e != nil {
-			return e
+		ks, _, _, e1 := sea.KS(xy, pd)
+		if e1 != nil {
+			return e1
 		}
 		logger(log, fmt.Sprintf("\n\nModel Assessment\nKS - %s: %0.1f%%\n\n", segSpec.name, ks), true)
 
 	case sea.FRCts:
-		cor := stat.Correlation(fit, obs, nil)
-		cor *= cor
 		logger(log, fmt.Sprintf("\n\nModel Assessment\n R-Squared %0.1f%%\n\n", sea.R2(obs, fit)), true)
 	}
 
@@ -460,7 +456,7 @@ func assess(pipe sea.Pipeline, specs specsMap, obsFt *sea.FType, segSpec *slices
 		return e
 	}
 
-	baseSl, e := sea.NewSlice(segSpec.feature, 0, pipe, nil)
+	baseSl, e := sea.NewSlice(segSpec.feature, minCount, pipe, nil)
 	if e != nil {
 		return e
 	}
@@ -502,8 +498,8 @@ func assess(pipe sea.Pipeline, specs specsMap, obsFt *sea.FType, segSpec *slices
 		}
 
 		pd.FileName, pd.Title, pd.STitle = pltFile, pltTitle, ""
-		if e = sea.Decile(xy, pd); e != nil {
-			return e
+		if e1 := sea.Decile(xy, pd); e1 != nil {
+			return e1
 		}
 
 		for _, fld := range specs.assessFields() {

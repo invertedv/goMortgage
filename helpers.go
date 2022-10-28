@@ -14,7 +14,12 @@ import (
 
 const (
 	// required has the minimum field list must have at least these entries
-	required = "model, buildData, outDir, mtgFields, buildModel"
+	required = `buildData, outDir, mtgFields, buildModel,
+            mtgDb, econDb, pass1Strat, pass1Sample, pass2Strat,
+            pass2Sample, mtgFields, econFields, modelTable,
+            sampleSize1, strats1, sampleSize2, strats2, where1, where2, layer1,
+            batchSize, epochs, earlyStopping, targetType,
+            learningRateStart, learningRateEnd, modelQuery, validateQuery, assessQuery`
 )
 
 var (
@@ -62,12 +67,12 @@ func inits(host, user, pw, specsFile string, maxMemory, maxGroupBy int64) (specs
 		return nil, nil, nil, e
 	}
 
-	specs, e := readSpecsMap(specsFile, required)
+	specs, e := readSpecsMap(specsFile)
 	if e != nil {
 		return nil, nil, nil, e
 	}
 
-	if er := specs.check(specs.requiredKeys()); er != nil {
+	if er := specs.check(required); er != nil {
 		return nil, nil, nil, er
 	}
 
@@ -112,7 +117,7 @@ func inits(host, user, pw, specsFile string, maxMemory, maxGroupBy int64) (specs
 	}
 
 	// copy over the spec file
-	if er := copyFile(specsFile, specs["outDir"]+"model.spec"); er != nil {
+	if er := copyFile(specsFile, specs["outDir"]+"model.gom"); er != nil {
 		return nil, nil, nil, er
 	}
 
@@ -126,13 +131,13 @@ func inits(host, user, pw, specsFile string, maxMemory, maxGroupBy int64) (specs
 }
 
 // buildQuery builds a query from a skeleton.  Any time the skeleton contains <key>, where key is a key in replacers
-// it is replaced with map[key].
+// it is replaced with the value map[key].
 func buildQuery(baseWith string, replacers map[string]string) string {
 	qry := baseWith
 	for k, v := range replacers {
 		krep := fmt.Sprintf("<%s>", k)
 		// add whitespace around v
-		qry = strings.ReplaceAll(qry, krep, " "+v+" ")
+		qry = strings.ReplaceAll(qry, krep, fmt.Sprintf(" %s ", v))
 	}
 
 	return fmt.Sprintf("%s SELECT * FROM d", qry)

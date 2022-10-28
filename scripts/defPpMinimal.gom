@@ -1,5 +1,5 @@
 model: death
-buildData: yes
+buildData: no
 buildModel: yes
 
 // data settings
@@ -19,8 +19,8 @@ target: targetDeath
 targetType: cat
 cat: propType, occ, standard, nsDoc, nsUw, coBorr, hasSecond, harp, aoMod, aoBap, canBe12, fcType, covid
 cts: trgAge, term, units, trgUnempRate, trgEltv, trgRefiIncentive, spread, d120, pModDirect, fcTime
-addlCats: targetAssist, targetDq, aoMaxDq12,fcstMonth, vintage, aoDqCap6, purpose, aoPrior30, aoPrior60, aoPrior90p, state, amType, aoDq, channel, servMapped
-addlKeep: lnId, fico, aoPropVal, dti, aoMonthsCur,lbrGrowth
+addlCats: targetAssist, targetDq, aoMaxDq12,fcstMonth, vintage, aoDqCap6, purpose, aoPrior30, aoPrior60, aoPrior90p, state, amType, aoDq, channel, servMapped, pPen36
+addlKeep: lnId, fico, aoPropVal, dti, aoMonthsCur,lbrGrowth, y20PropVal
 layer1: FC(size:20, activation:relu)
 //layer3: DropOut(0.1)
 layer2: FC(size:20, activation:relu)
