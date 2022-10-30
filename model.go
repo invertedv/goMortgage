@@ -402,7 +402,7 @@ func assess(pipe sea.Pipeline, specs specsMap, obsFt *sea.FType, segSpec *slices
 	}
 
 	modelLoc := specs["modelDir"] + "model"
-	// assess Fit
+
 	nnP, e := sea.PredictNN(modelLoc, pipe, false)
 	if e != nil {
 		return e
@@ -437,6 +437,7 @@ func assess(pipe sea.Pipeline, specs specsMap, obsFt *sea.FType, segSpec *slices
 		return e
 	}
 
+	// overall assessment
 	switch obsFt.Role {
 	case sea.FRCat:
 		pd.Title, pd.FileName = fmt.Sprintf("%s<br>KS-%s", specs.title(), segSpec.name), graphDir+"ksAll.html"
@@ -461,6 +462,7 @@ func assess(pipe sea.Pipeline, specs specsMap, obsFt *sea.FType, segSpec *slices
 		return e
 	}
 
+	// run through the values we're slicing on
 	for baseSl.Iter() {
 		var pathVal string
 		baseSlicer := baseSl.MakeSlicer()

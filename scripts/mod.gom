@@ -1,12 +1,11 @@
 title: Modifications Model
-model: mod
-buildData: no
+buildData: yes
 buildModel: yes
 
 // data settings
-strats1: state, aoDt
-sampleSize1: 15000000
-strats2: fcstMonth, month, aoDq
+strats1: state, aoDt, aoAge
+sampleSize1: 5000000
+strats2: fcstMonth, month, aoDqCap6
 sampleSize2: 2000000
 where1: AND aoAge >= 0 AND aoDq >= 0 AND aoDq <= 24 AND aoUpb > 10000 AND mon.zb='00' AND aoMod='N' AND aoBap in ['N', '7', '9']
 where2:  AND trgZb='00' AND fcstMonth > 0 
@@ -27,7 +26,7 @@ layer1: DropOut(.1)
 layer2: FC(size:20, activation:relu)
 layer3: FC(size:2, activation:softmax)
 batchSize: 5000
-epochs: 5 //1000
+epochs: 1000
 earlyStopping: 40
 learningRateStart: .0005
 learningRateEnd: .00025
@@ -36,13 +35,12 @@ validateQuery: SELECT %s FROM %s WHERE bucket in (10,11,12,13,14)
 assessQuery: SELECT %s FROM %s WHERE bucket in (15,16,17,18,19)
 
 // output locations
-outDir: /home/will/goMortgage/modXXXXXXXXXXXXXXX
+outDir: /home/will/goMortgage/mod
 pass1Strat: tmp.strat1Mod
 pass1Sample: tmp.sample1Mod
 pass2Strat: tmp.strat2Mod
 pass2Sample: tmp.sample2Mod
 modelTable: tmp.modelMod
-log: log.txt
 
 // save Assess Data + model output
 saveTable: tmp.outMod

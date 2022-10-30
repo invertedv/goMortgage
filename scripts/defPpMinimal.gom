@@ -1,9 +1,8 @@
-model: death
-buildData: no
+buildData: yes
 buildModel: yes
 
 // data settings
-strats1: state, aoDt
+strats1: state, aoDt, aoAge
 sampleSize1: 15000000
 strats2: fcstMonth, month, aoDqCap6
 sampleSize2: 3000000
@@ -42,8 +41,6 @@ pass1Sample: tmp.sampleDeath1
 pass2Strat: tmp.stratDeath2
 pass2Sample: tmp.sampleDeath2
 modelTable: tmp.modelDeath
-//tmpDb: tmp.temp
-log: log.txt
 
 // save Assess Data + model output
 saveTable: tmp.outDefPpMinimal

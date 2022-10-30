@@ -1,10 +1,9 @@
 title: DQ model
-model: dq
-buildData: no
+buildData: yes
 buildModel: yes
 
 // data settings
-strats1: state, aoDt
+strats1: state, aoDt, aoAge
 sampleSize1: 30000000
 strats2: fcstMonth, month, aoDqCap6
 sampleSize2: 3000000
@@ -42,7 +41,6 @@ pass1Sample: tmp.sampleDq1
 pass2Strat: tmp.stratDq2
 pass2Sample: tmp.sampleDq2
 modelTable: tmp.modelDq
-log: log.txt
 
 // save Assess Data + model output
 saveTable: tmp.outDq

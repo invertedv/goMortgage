@@ -1,6 +1,5 @@
 title: Net Proceeds Model with servMapped:4 and state:4
-model: netpro
-buildData: no
+buildData: yes
 buildModel: yes
 
 // data settings
@@ -41,7 +40,6 @@ pass1Sample: tmp.sampleNP1
 pass2Strat: tmp.stratNP2
 pass2Sample: tmp.sampleNP2
 modelTable: tmp.modelNetPro
-log: log.txt
 
 // save Assess Data + model output
 saveTable: tmp.outNetPro

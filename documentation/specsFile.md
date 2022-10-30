@@ -1,6 +1,7 @@
 ## The Specification File
 The specificaton (specs) file tells goMortgage what to do.  There are examples in the scripts directory.
-Some fields in the specs file are mandatory, others optional.
+Some fields in the specs file are mandatory, others optional.  Note that comments start with a double forward
+slash (//)
 
 The format for entries is:
 
