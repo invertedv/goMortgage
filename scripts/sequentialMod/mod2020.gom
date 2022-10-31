@@ -1,5 +1,4 @@
 title: Model Data Through 2019
-model: mod
 buildData: no
 buildModel: yes
 
@@ -20,8 +19,8 @@ target: targetAssist
 targetType: cat
 cat: purpose, propType, occ, amType, standard, nsDoc, nsUw, coBorr, hasSecond, aoPrior30, aoPrior60, aoPrior90p, harp, channel
 cts: fico, trgAge, term, trgUpbExp, units, dti, trgUnempRate, trgEltv, aoMonthsCur, trgPti50, trgRefiIncentive, lbrGrowth, spread
-emb:  aoDq: 5, state: 2, servMapped: 2
-addlCats: aoMaxDq12, vintage, aoDqCap6, fcstMonth
+emb:  aoDq: 5, state: 2, servMapped: 2, fcstMonth: 2
+addlCats: aoMaxDq12, vintage, aoDqCap6
 addlKeep: lnId, fcstMonth
 layer1: DropOut(.1)
 layer2: FC(size:20, activation:relu)
@@ -42,7 +41,6 @@ pass1Sample: tmp.sample1Mod
 pass2Strat: tmp.strat2Mod
 pass2Sample: tmp.sample2Mod
 modelTable: tmp.modelMod
-log: log.txt
 
 // save Assess Data + model output
 saveTable: tmp.outMod2020

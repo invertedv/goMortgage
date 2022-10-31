@@ -1,5 +1,5 @@
 title: Modifications Model
-buildData: yes
+buildData: no
 buildModel: yes
 
 // data settings
@@ -19,8 +19,8 @@ target: targetAssist
 targetType: cat
 cat: purpose, propType, occ, amType, standard, nsDoc, nsUw, coBorr, hasSecond, aoPrior30, aoPrior60, aoPrior90p, harp, channel
 cts: fico, trgAge, term, trgUpbExp, units, dti, trgUnempRate, trgEltv, aoMonthsCur, trgPti50, trgRefiIncentive, lbrGrowth, spread
-emb:  aoDq: 5, state: 2, servMapped: 2
-addlCats: aoMaxDq12, vintage, aoDqCap6, fcstMonth
+emb:  aoDq: 5, state: 2, servMapped: 2, fcstMonth: 2
+addlCats: aoMaxDq12, vintage, aoDqCap6
 addlKeep: lnId, fcstMonth
 layer1: DropOut(.1)
 layer2: FC(size:20, activation:relu)

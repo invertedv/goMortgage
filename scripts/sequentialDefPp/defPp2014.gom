@@ -1,5 +1,4 @@
 title: Model Data Through 2013
-model: death
 buildData: no
 buildModel: yes
 
@@ -20,6 +19,7 @@ target: targetDeath
 targetType: cat
 cat: propType, occ, standard, nsDoc, nsUw, coBorr, hasSecond, harp, aoMod, aoBap, canBe12, fcType, covid
 cts: trgAge, term, units, trgUnempRate, trgEltv, trgRefiIncentive, spread, d120, pModDirect, fcTime
+emb: fcstMonth: 2
 addlCats: targetAssist, targetDq, aoMaxDq12,fcstMonth, vintage, aoDqCap6, purpose, aoPrior30, aoPrior60, aoPrior90p, state, amType, aoDq, channel, servMapped, pPen36
 addlKeep: lnId, fico, aoPropVal, dti, aoMonthsCur,lbrGrowth, y20PropVal
 layer1: FC(size:20, activation:relu)
@@ -42,8 +42,6 @@ pass1Sample: tmp.sampleDeath1
 pass2Strat: tmp.stratDeath2
 pass2Sample: tmp.sampleDeath2
 modelTable: tmp.modelDeath
-//tmpDb: tmp.temp
-log: log.txt
 
 // existing models that are inputs
 inputModel: Mod

@@ -537,3 +537,5 @@ func assess(pipe sea.Pipeline, specs specsMap, obsFt *sea.FType, segSpec *slices
 // servicer, weighting, batchsize,
 
 // TODO: figure out why fcstMonth has to be a cat for curves to work
+
+// TODO: think about fcstMonth curve for mods...is there a reason it misses?
