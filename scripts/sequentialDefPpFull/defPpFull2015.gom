@@ -1,9 +1,9 @@
-title: Model Data Through 2013
+title: Model Data Through 2014
 buildData: no
 buildModel: yes
 
 // data settings
-strats1: state, aoDt
+strats1: state, aoDt, aoAge
 sampleSize1: 15000000
 strats2: fcstMonth, month, aoDqCap6
 sampleSize2: 3000000
@@ -17,12 +17,13 @@ econFields: zip3
 // model settings
 target: targetDeath
 targetType: cat
-cat: propType, occ, standard, nsDoc, nsUw, hasSecond, harp, aoMod, aoBap, covid, fcType, coBorr, canBe12
-cts: units, trgEltv, trgRefiIncentive, spread, d120, pModDirect, fcTime, term, trgAge, trgUnempRate
-emb: fcstMonth: 2
-addlCats: targetAssist, targetDq, aoMaxDq12,fcstMonth, vintage, aoDqCap6, purpose, aoPrior30, aoPrior60, aoPrior90p, state, amType, aoDq, channel, servMapped, pPen36
-addlKeep: lnId, fico, aoPropVal, dti, aoMonthsCur,lbrGrowth, y20PropVal
+cat: propType, occ, standard, nsDoc, nsUw, hasSecond, harp, aoMod, aoBap, covid, fcType, coBorr, canBe12, purpose, aoPrior30, aoPrior60, aoPrior90p, amType, channel, pPen36
+cts: units, trgEltv, trgRefiIncentive, spread, d120, pModDirect, fcTime, term, trgAge, trgUnempRate, fico, y20PropVal, trgPti50, lbrGrowth, dti, aoMonthsCur
+emb: fcstMonth: 2, aoDq: 5, state: 4, servMapped: 4
+addlCats: targetAssist, targetDq, aoMaxDq12, vintage, aoDqCap6
+addlKeep: lnId, aoPropVal, aoMonthsCur
 layer1: FC(size:20, activation:relu)
+//layer3: DropOut(0.1)
 layer2: FC(size:20, activation:relu)
 layer3: FC(size:3, activation:softmax)
 batchSize: 50000
@@ -31,25 +32,29 @@ earlyStopping: 40
 learningRateStart: .0005
 learningRateEnd: .00025
 l2Reg: 0.00005
-modelQuery: SELECT %s FROM %s WHERE bucket < 10 AND year(month) < 2014
-validateQuery: SELECT %s FROM %s WHERE bucket in (10,11,12,13,14) AND year(month) < 2014
+modelQuery: SELECT %s FROM %s WHERE bucket < 10 AND year(month) < 2015
+validateQuery: SELECT %s FROM %s WHERE bucket in (10,11,12,13,14) AND year(month) < 2015
 assessQuery: SELECT %s FROM %s WHERE bucket in (15,16,17,18,19)
 
 // output locations
-outDir: /home/will/goMortgage/sequential/defPp/defPp2014
+outDir: /home/will/goMortgage/sequential/defPpFull/defPpFull2015
 pass1Strat: tmp.stratDeath1
 pass1Sample: tmp.sampleDeath1
 pass2Strat: tmp.stratDeath2
 pass2Sample: tmp.sampleDeath2
 modelTable: tmp.modelDeath
 
+// save Assess Data + model output
+saveTable: tmp.outDefPpMinimal
+saveTableTargets: prepay: 1; default: 2
+
 // existing models that are inputs
 inputModel: Mod
-locationMod: /home/will/goMortgage/sequential/mod/mod2014
+locationMod: /home/will/goMortgage/sequential/mod/mod2015
 targetsMod: pModDirect:1
 
 inputModel: Dq
-locationDq: /home/will/goMortgage/sequential/dq/dq2014
+locationDq: /home/will/goMortgage/sequential/dq/dq2015
 targetsDq: d120: 4,5,6,7,8,9,10,11,12; current:0
 
 // assessment

@@ -17,8 +17,8 @@ econFields: zip3
 // model settings
 target: targetDeath
 targetType: cat
-cat: propType, occ, standard, nsDoc, nsUw, coBorr, hasSecond, harp, aoMod, aoBap, canBe12, fcType, covid
-cts: trgAge, term, units, trgUnempRate, trgEltv, trgRefiIncentive, spread, d120, pModDirect, fcTime
+cat: propType, occ, standard, nsDoc, nsUw, hasSecond, harp, aoMod, aoBap, covid, fcType, coBorr, canBe12
+cts: units, trgEltv, trgRefiIncentive, spread, d120, pModDirect, fcTime, term, trgAge, trgUnempRate
 emb: fcstMonth: 2
 addlCats: targetAssist, targetDq, aoMaxDq12,fcstMonth, vintage, aoDqCap6, purpose, aoPrior30, aoPrior60, aoPrior90p, state, amType, aoDq, channel, servMapped, pPen36
 addlKeep: lnId, fico, aoPropVal, dti, aoMonthsCur,lbrGrowth, y20PropVal
@@ -36,7 +36,7 @@ validateQuery: SELECT %s FROM %s WHERE bucket in (10,11,12,13,14) AND year(month
 assessQuery: SELECT %s FROM %s WHERE bucket in (15,16,17,18,19)
 
 // output locations
-outDir: /home/will/goMortgage/sequential/defPp/dq2008
+outDir: /home/will/goMortgage/sequential/defPp/defPp2008
 pass1Strat: tmp.stratDeath1
 pass1Sample: tmp.sampleDeath1
 pass2Strat: tmp.stratDeath2
