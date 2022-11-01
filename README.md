@@ -7,7 +7,10 @@ goMortgage is an app for building models to forecast mortgage performance.  It i
 experience building these models. See my [linkedIn](www.linkedin.com/in/will-alexander-data-scientist) profile for 
 more about me. 
 
-goMortgage is unusual in many dimensions.  It's:
+goMortgage is unusual in many dimensions. It's a one-stop modeling platform that will build both the modeling
+dataset and the model.
+
+It's:
 
    - **A special purpose app.**<br>
 goMortgage is an app.  The specification of the model ('specs' file) is provided to it in a text file.  Changing features of

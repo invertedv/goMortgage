@@ -1,5 +1,5 @@
-## The Specification File
-The specificaton (specs) file tells goMortgage what to do.  There are examples in the scripts directory.
+## The Specification File (.gom files)
+The specificaton file (.gom) instructs goMortgage what to do.  There are examples in the scripts directory.
 Some fields in the specs file are mandatory, others optional.  Note that comments start with a double forward
 slash (//)
 
