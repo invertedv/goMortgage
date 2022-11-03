@@ -5,8 +5,6 @@ read -p "User: " user
 read -s -p "Password: " password
 echo ""
 
-cd ../sequentialDefPp
-./defPpSeq.sh
 
 ./goMortgage -user $user -pw $password -specs /home/will/GolandProjects/goMortgage/scripts/defPpFull.gom
 
@@ -25,3 +23,6 @@ cd ../sequentialDefPp
 ./goMortgage -user $user -pw $password -specs /home/will/GolandProjects/goMortgage/scripts/sequentialDefPpFull/defPpFull2019.gom
 ./goMortgage -user $user -pw $password -specs /home/will/GolandProjects/goMortgage/scripts/sequentialDefPpFull/defPpFull2020.gom
 
+
+cd ../sequentialDefPp
+./defPpSeq.sh

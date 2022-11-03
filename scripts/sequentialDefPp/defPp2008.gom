@@ -36,7 +36,7 @@ validateQuery: SELECT %s FROM %s WHERE bucket in (10,11,12,13,14) AND year(month
 assessQuery: SELECT %s FROM %s WHERE bucket in (15,16,17,18,19)
 
 // output locations
-outDir: /home/will/goMortgage/sequential/defPp/defPp2008
+outDir: /home/will/goMortgage/sequential/defPpMinimal/defPpMinimal2008
 pass1Strat: tmp.stratDeath1
 pass1Sample: tmp.sampleDeath1
 pass2Strat: tmp.stratDeath2
