@@ -44,10 +44,6 @@ pass2Strat: tmp.stratDeath2
 pass2Sample: tmp.sampleDeath2
 modelTable: tmp.modelDeath
 
-// save Assess Data + model output
-saveTable: tmp.outDefPpMinimal
-saveTableTargets: prepay: 1; default: 2
-
 // existing models that are inputs
 inputModel: Mod
 locationMod: /home/will/goMortgage/sequential/mod/mod2009

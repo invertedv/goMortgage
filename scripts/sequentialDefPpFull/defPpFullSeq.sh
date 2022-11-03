@@ -1,9 +1,13 @@
-#!/usr/bin/bash
+#!/usr/bin/fish
 
 go build ../../
 read -p "User: " user
 read -s -p "Password: " password
 echo ""
+
+cd ../sequentialDefPp
+./defPpSeq.sh
+
 ./goMortgage -user $user -pw $password -specs /home/will/GolandProjects/goMortgage/scripts/defPpFull.gom
 
 ./goMortgage -user $user -pw $password -specs /home/will/GolandProjects/goMortgage/scripts/sequentialDefPpFull/defPpFull2007.gom

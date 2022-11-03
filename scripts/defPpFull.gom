@@ -45,7 +45,7 @@ pass2Sample: tmp.sampleDeath2
 modelTable: tmp.modelDeath
 
 // save Assess Data + model output
-saveTable: tmp.outDefPpMinimal
+saveTable: tmp.outDefPpFull
 saveTableTargets: prepay: 1; default: 2
 
 // existing models that are inputs
