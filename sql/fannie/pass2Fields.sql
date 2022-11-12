@@ -23,6 +23,7 @@ s.aoPayment,
 s.aoBap,
 s.aoRate,
 s.aoZb,
+s.noGroups,
 
 trgRate > 0 ? trgRate / 1200.0 : 0.01 / 1200.0 AS trgR,
 term - trgAge AS trgRemTerm,

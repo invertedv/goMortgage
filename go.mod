@@ -7,7 +7,7 @@ require (
 	github.com/ClickHouse/clickhouse-go/v2 v2.0.14
 	github.com/MetalBlueberry/go-plotly v0.4.0
 	github.com/invertedv/chutils v1.1.13
-	github.com/invertedv/sampler v0.0.1
+	github.com/invertedv/sampler v0.0.2
 	github.com/invertedv/seafan v0.0.30
 )
 

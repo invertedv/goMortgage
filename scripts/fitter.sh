@@ -1,8 +1,9 @@
-#!/usr/bin/fish
-go build .
+#!/usr/bin/bash
+go build ../
 
 read -p "User: " user
 read -s -p "Password: " password
 echo ""
 
-./mortgage -user $user -pw $password /home/will/GolandProjects/mortgage/scripts/dq.gom
+./goMortgage -user $user -pw $password -specs /home/will/GolandProjects/goMortgage/scripts/defPpMinimalEven.gom
+

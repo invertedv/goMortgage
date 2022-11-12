@@ -72,19 +72,22 @@ func main() {
 		}
 	}()
 
-	// TODO: this should not be needed
-	//	conn.Exec("set max_threads=6")
-
 	start := time.Now()
 
-	if specs["buildData"] == yes {
+	if specs.buildData() {
 		if e := data(specs, conn, log); e != nil {
 			panic(e)
 		}
 	}
 
-	if specs["buildModel"] == yes {
+	if specs.buildModel() {
 		if e := model(specs, conn, log); e != nil {
+			panic(e)
+		}
+	}
+
+	if specs.assessModel() {
+		if e := assessModel(specs, conn, log); e != nil {
 			panic(e)
 		}
 	}

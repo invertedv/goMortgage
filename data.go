@@ -57,11 +57,12 @@ func existing(modelRoot string, basePipe sea.Pipeline) error {
 	rdr := bufio.NewReader(handle)
 
 	for line, err := rdr.ReadString('\n'); err == nil; line, err = rdr.ReadString('\n') {
-		spl := toSlice(line, ":")
+		spl := toSlice(line, "{")
 		if len(spl) != 2 {
 			return fmt.Errorf("existing model %s error in target %s", modelRoot, line)
 		}
-		lvls := strings.Split(spl[1], ",")
+
+		lvls := strings.Split(strings.ReplaceAll(spl[1], "}", ""), ",")
 		fieldName := spl[0]
 		targets := make([]int, 0)
 

@@ -15,7 +15,7 @@ import (
 const (
 	// required has the minimum field list must have at least these entries
 	required = `buildData, outDir, mtgFields, buildModel,
-            mtgDb, econDb, pass1Strat, pass1Sample, pass2Strat,
+            mtgDb, econDb, pass1Strat, pass1Sample, pass2Strat, assessModel,
             pass2Sample, mtgFields, econFields, modelTable,
             sampleSize1, strats1, sampleSize2, strats2, where1, where2, layer1,
             batchSize, epochs, earlyStopping, targetType,
@@ -76,16 +76,36 @@ func inits(host, user, pw, specsFile string, maxMemory, maxGroupBy int64) (specs
 		return nil, nil, nil, er
 	}
 
-	if er := os.RemoveAll(specs["outDir"]); er != nil {
-		return nil, nil, nil, er
-	}
+	if specs.buildData() || specs.buildModel() {
+		if er := os.RemoveAll(specs["outDir"]); er != nil {
+			return nil, nil, nil, er
+		}
 
-	if er := os.MkdirAll(specs["outDir"], os.ModePerm); er != nil {
-		return nil, nil, nil, er
+		if er := os.MkdirAll(specs["outDir"], os.ModePerm); er != nil {
+			return nil, nil, nil, er
+		}
 	}
+	switch specs.buildData() || specs.buildModel() {
+	case true:
+		if er := os.RemoveAll(specs["outDir"]); er != nil {
+			return nil, nil, nil, er
+		}
 
-	if specs["modelDir"], e = makeSubDir(specs["outDir"], "model"); e != nil {
-		return nil, nil, nil, e
+		if er := os.MkdirAll(specs["outDir"], os.ModePerm); er != nil {
+			return nil, nil, nil, er
+		}
+
+		if specs["modelDir"], e = makeSubDir(specs["outDir"], "model"); e != nil {
+			return nil, nil, nil, e
+		}
+
+	case false:
+		specs["modelDir"] = fmt.Sprintf("%smodel/", slash(specs["outDir"]))
+		// TODO check outdir exists, and model files
+
+		if er := os.RemoveAll(fmt.Sprintf("%sgraphs", slash(specs["outDir"]))); er != nil {
+			return nil, nil, nil, er
+		}
 	}
 
 	if specs["graphDir"], e = makeSubDir(specs["outDir"], "graphs"); e != nil {
@@ -114,6 +134,21 @@ func inits(host, user, pw, specsFile string, maxMemory, maxGroupBy int64) (specs
 
 	if specs["inputDir"], e = makeSubDir(specs["modelDir"], "inputModels"); e != nil {
 		return nil, nil, nil, e
+	}
+
+	// just doing assessment ... append to existing log file, don't copy .gom file or input models
+	if !specs.buildData() && !specs.buildModel() {
+		if er := specs.checkInputModels(); er != nil {
+			return nil, nil, nil, er
+		}
+
+		logFile, er := os.OpenFile(specs["outDir"]+"model.log", os.O_APPEND|os.O_WRONLY, os.ModePerm)
+
+		if er != nil {
+			return nil, nil, nil, er
+		}
+
+		return specs, conn, logFile, nil
 	}
 
 	// copy over the spec file
@@ -195,7 +230,7 @@ func makeSubDir(dir, subDir string) (path string, err error) {
 		return
 	}
 
-	return dir, nil
+	return path, nil
 }
 
 // plotCosts plots the cost function value vs epoch with title costName

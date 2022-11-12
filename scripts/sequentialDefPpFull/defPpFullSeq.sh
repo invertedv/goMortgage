@@ -1,4 +1,4 @@
-#!/usr/bin/fish
+#!/usr/bin/bash
 
 go build ../../
 read -p "User: " user

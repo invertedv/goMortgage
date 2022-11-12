@@ -326,7 +326,7 @@ func (sf specsMap) saveTable() (tableName string, fields []string, targets [][]i
 
 	fts := strings.Split(fTargs, ";")
 	for _, ft := range fts {
-		fldTarg := strings.Split(ft, ":")
+		fldTarg := strings.Split(ft, "{")
 		if len(fldTarg) != 2 {
 			return "", nil, nil, fmt.Errorf("cannot parse saveTableTargets: %s", fTargs)
 		}
@@ -336,7 +336,7 @@ func (sf specsMap) saveTable() (tableName string, fields []string, targets [][]i
 		targs := make([]int, 0)
 
 		for _, targStr := range targsStr {
-			targ, e := strconv.ParseInt(strings.ReplaceAll(targStr, " ", ""), base10, bits32)
+			targ, e := strconv.ParseInt(strings.ReplaceAll(strings.ReplaceAll(targStr, " ", ""), "}", ""), base10, bits32)
 			if e != nil {
 				return "", nil, nil, fmt.Errorf("cannot ParseInt targets %s", targsStr)
 			}
@@ -350,6 +350,28 @@ func (sf specsMap) saveTable() (tableName string, fields []string, targets [][]i
 	return table, fields, targets, nil
 }
 
+func (sf specsMap) checkInputModels() error {
+	for k, v := range sf {
+		if !strings.Contains(k, "inputModel") {
+			continue
+		}
+
+		modelName := v
+
+		_, ok := sf["location"+modelName]
+		if !ok {
+			return fmt.Errorf("(specsMap) inputModels: no location for model %s", modelName)
+		}
+
+		_, ok = sf["targets"+modelName]
+		if !ok {
+			return fmt.Errorf("(specsMap) inputModels: no target for model %s", modelName)
+		}
+	}
+
+	return nil
+}
+
 // inputModels copies input models to the subdirectory model/inputModels in the directory for this model.
 //
 // The format in the specs file is:
@@ -360,6 +382,10 @@ func (sf specsMap) saveTable() (tableName string, fields []string, targets [][]i
 //
 // The output of the model, column 1, will be called pMod and be available as a feature.
 func (sf specsMap) inputModels() error {
+	if e := sf.checkInputModels(); e != nil {
+		return e
+	}
+
 	for k, v := range sf {
 		if !strings.Contains(k, "inputModel") {
 			continue
@@ -367,15 +393,9 @@ func (sf specsMap) inputModels() error {
 
 		modelName := v
 
-		loc, ok := sf["location"+modelName]
-		if !ok {
-			return fmt.Errorf("(specsMap) inputModels: no location for model %s", modelName)
-		}
+		loc := sf["location"+modelName]
 
-		targets, ok := sf["targets"+modelName]
-		if !ok {
-			return fmt.Errorf("(specsMap) inputModels: no target for model %s", modelName)
-		}
+		targets := sf["targets"+modelName]
 
 		path := slash(sf["inputDir"] + modelName)
 		if e := copyFiles(slash(loc)+"model", path); e != nil {
@@ -590,6 +610,9 @@ func (sf specsMap) allFields() []string {
 }
 
 // calcFields returns the fields derived from input models (key inputModel)
+// The field has the format:
+//
+//	field name 1 {levels}; field name 2 {levels}
 func (sf specsMap) calcFields() []string {
 	cFlds := make([]string, 0)
 	for k, v := range sf {
@@ -598,8 +621,8 @@ func (sf specsMap) calcFields() []string {
 		}
 		targs := sf[fmt.Sprintf("targets%s", v)]
 		for _, trg := range strings.Split(targs, ";") {
-			each := strings.Split(trg, ":")
-			cFlds = append(cFlds, strings.ReplaceAll(each[0], " ", ""))
+			each := strings.Split(trg, "{")
+			cFlds = append(cFlds, strings.ReplaceAll(strings.ReplaceAll(each[0], " ", ""), "}", ""))
 		}
 	}
 	return cFlds
@@ -637,8 +660,20 @@ func (sf specsMap) title() string {
 	return ""
 }
 
+func (sf specsMap) buildData() bool {
+	return sf["buildData"] == yes
+}
+
+func (sf specsMap) buildModel() bool {
+	return sf["buildModel"] == yes
+}
+
+func (sf specsMap) assessModel() bool {
+	return sf["assessModel"] == yes
+}
+
 // readSpecsMap reads the specfile and creates the specMap.
-func readSpecsMap(specFile string) (specsMap, error) {
+func XreadSpecsMap(specFile string) (specsMap, error) {
 	handle, e := os.Open(specFile)
 	if e != nil {
 		return nil, e
@@ -684,6 +719,82 @@ func readSpecsMap(specFile string) (specsMap, error) {
 			key = fmt.Sprintf("%s%d", key, ind)
 		}
 		sMap[key] = strings.TrimLeft(kv[1], " ")
+	}
+
+	return sMap, nil
+}
+
+// readSpecsMap reads the specfile and creates the specMap.
+func readSpecsMap(specFile string) (specsMap, error) {
+	handle, e := os.Open(specFile)
+	if e != nil {
+		return nil, e
+	}
+	defer func() { _ = handle.Close() }()
+
+	rdr := bufio.NewReader(handle)
+
+	sMap := make(specsMap)
+	line, nextLine := "", ""
+
+	for {
+		nextLine = line
+
+		for {
+			if line, e = rdr.ReadString('\n'); e == io.EOF {
+				line = ""
+				break
+			}
+
+			if e != nil {
+				return nil, e
+			}
+
+			line = strings.TrimLeft(strings.TrimRight(line, "\n"), " ")
+
+			if line == "" || len(line) < 2 {
+				continue
+			}
+
+			// entire line is a comment
+			if line[0:2] == "//" {
+				continue
+			}
+
+			// line has comment
+			if ind := strings.Index(line, "//"); ind >= 0 {
+				line = line[0:ind]
+				line = strings.TrimRight(line, " ")
+			}
+
+			if strings.Contains(nextLine, ":") && strings.Contains(line, ":") {
+				break
+			}
+
+			nextLine = fmt.Sprintf("%s %s", nextLine, line)
+		}
+
+		kv := strings.SplitN(nextLine, ":", 2)
+		if len(kv) != 2 {
+			return nil, fmt.Errorf("bad key val: %s in specs file %s", nextLine, specFile)
+		}
+
+		key := strings.ReplaceAll(kv[0], " ", "")
+		if _, ok := sMap[key]; ok {
+			return nil, fmt.Errorf("duplicate key: %s", key)
+		}
+
+		//		ind := 0
+		//		for _, ok := sMap[key]; ok; _, ok = sMap[key] {
+		//			ind++
+		//			key = fmt.Sprintf("%s%d", key, ind)
+		//		}
+
+		sMap[key] = strings.TrimLeft(kv[1], " ")
+
+		if e == io.EOF {
+			break
+		}
 	}
 
 	return sMap, nil
