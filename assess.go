@@ -43,7 +43,7 @@ func assessModel(specs specsMap, conn *chutils.Connect, log *os.File) error {
 	for _, slice := range specs.slicer("assess") {
 		sl := slice // bad to pass for var as a pointer
 
-		baseFt := fts.Get(slice.feature) // this may not be in fts
+		baseFt := assessPipe.GetFType(slice.feature) // this may not be in fts
 		if e := marginal(specs, &sl, baseFt, obsFt, fts, conn); e != nil {
 			return e
 		}

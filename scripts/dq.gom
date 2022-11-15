@@ -1,15 +1,16 @@
 title: DQ model
-buildData: yes
+buildData: no
 buildModel: yes
+assessModel: yes
 
-// data settings
+// data build settings
 strats1: state, aoDt, aoAge
 sampleSize1: 30000000
 strats2: fcstMonth, month, aoDqCap6
 sampleSize2: 3000000
 where1: AND aoAge >= 0 AND aoDq >= 0 AND aoDq <= 24 AND aoUpb > 10000 AND mon.zb='00'
 where2:  AND trgZb='00' AND fcstMonth > 0 
-mtgDb: mtg.fannie
+omtgDb: mtg.fannie
 mtgFields: fannie
 econDb: econGo.final
 econFields: zip3
@@ -18,7 +19,7 @@ econFields: zip3
 target: targetDq
 targetType: cat
 cat: purpose, propType, occ, amType, standard, nsDoc, nsUw, coBorr, hasSecond, aoPrior30, aoPrior60, aoPrior90p, harp, aoMod, aoBap, channel, covid, fcType, pPen36
-cts: fico, trgAge, term, y20PropVal, units, dti, trgUnempRate, trgEltv, aoMonthsCur, trgPti50, trgRefiIncentive, lbrGrowth, spread, pMod
+cts: fico, trgAge, aoAge, term, y20PropVal, units, dti, trgUnempRate, trgEltv, aoMonthsCur, trgPti50, trgRefiIncentive, lbrGrowth, spread, pMod
 emb:  aoDq: 5, state: 4, servMapped: 4, fcstMonth: 2
 addlCats: targetAssist, aoMaxDq12, vintage, aoDqCap6, numBorr
 addlKeep: lnId, fcstMonth
@@ -31,9 +32,9 @@ epochs: 2000
 earlyStopping: 40
 learningRateStart: .0003
 learningRateEnd: .0001
-modelQuery: SELECT %s FROM %s WHERE bucket < 10
-validateQuery: SELECT %s FROM %s WHERE bucket in (10,11,12,13,14)
-assessQuery: SELECT %s FROM %s WHERE bucket in (15,16,17,18,19) 
+modelQuery: SELECT %s FROM %s WHERE bucket < 10 AND trgZb = '00'
+validateQuery: SELECT %s FROM %s WHERE bucket in (10,11,12,13,14) AND trgZb = '00'
+assessQuery: SELECT %s FROM %s WHERE bucket in (15,16,17,18,19) AND trgZb = '00'
 
 // output locations
 outDir: /home/will/goMortgage/dq
@@ -41,11 +42,11 @@ pass1Strat: tmp.stratDq1
 pass1Sample: tmp.sampleDq1
 pass2Strat: tmp.stratDq2
 pass2Sample: tmp.sampleDq2
-modelTable: tmp.modelDq
+modelTable: tmp.model
 
 // save Assess Data + model output
 saveTable: tmp.outDq
-saveTableTargets: d120:4,5,6,7,8,9,10,11,12; d30:1; current:0
+saveTableTargets: d120{4,5,6,7,8,9,10,11,12}; d30{1}; current{0}
 
 // existing models that are inputs
 inputModel: Mod
@@ -53,7 +54,8 @@ locationMod: /home/will/goMortgage/mod/
 targetsMod: pMod:1
 
 // assessment
-assessAddl: aoIncome50, aoEItb50,  trgPti10, trgPti90, ltv, aoMaxDq12, trgUpbExp, state, aoIncome90, msaLoc, aoPropVal, trgPropVal, vintage
+assessAddl: aoIncome50, aoEItb50,  trgPti10, trgPti90, ltv, aoMaxDq12, trgUpbExp, state, aoIncome90, msaLoc,
+  aoPropVal, trgPropVal, vintage
 
 assessNameaoDq: D120+
 assessTargetaoDq: 4,5,6,7,8,9,10,11,12

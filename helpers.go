@@ -12,16 +12,6 @@ import (
 	sea "github.com/invertedv/seafan"
 )
 
-const (
-	// required has the minimum field list must have at least these entries
-	required = `buildData, outDir, mtgFields, buildModel,
-            mtgDb, econDb, pass1Strat, pass1Sample, pass2Strat, assessModel,
-            pass2Sample, mtgFields, econFields, modelTable,
-            sampleSize1, strats1, sampleSize2, strats2, where1, where2, layer1,
-            batchSize, epochs, earlyStopping, targetType,
-            learningRateStart, learningRateEnd, modelQuery, validateQuery, assessQuery`
-)
-
 var (
 	//go:embed sql/passes/pass1.sql
 	withPass1 string
@@ -72,7 +62,7 @@ func inits(host, user, pw, specsFile string, maxMemory, maxGroupBy int64) (specs
 		return nil, nil, nil, e
 	}
 
-	if er := specs.check(required); er != nil {
+	if er := specs.check(); er != nil {
 		return nil, nil, nil, er
 	}
 
@@ -108,7 +98,7 @@ func inits(host, user, pw, specsFile string, maxMemory, maxGroupBy int64) (specs
 		}
 	}
 
-	if specs["graphDir"], e = makeSubDir(specs["outDir"], "graphs"); e != nil {
+	if specs["graphDir"], e = makeSubDir(specs["outDir"], specs.graphsKey()); e != nil {
 		return nil, nil, nil, e
 	}
 
@@ -138,7 +128,8 @@ func inits(host, user, pw, specsFile string, maxMemory, maxGroupBy int64) (specs
 
 	// just doing assessment ... append to existing log file, don't copy .gom file or input models
 	if !specs.buildData() && !specs.buildModel() {
-		if er := specs.checkInputModels(); er != nil {
+		// load up the needed cts and cat feature list in this case
+		if er := specs.features(specs["modelDir"]); er != nil {
 			return nil, nil, nil, er
 		}
 

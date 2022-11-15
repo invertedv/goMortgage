@@ -382,9 +382,6 @@ func (sf specsMap) checkInputModels() error {
 //
 // The output of the model, column 1, will be called pMod and be available as a feature.
 func (sf specsMap) inputModels() error {
-	if e := sf.checkInputModels(); e != nil {
-		return e
-	}
 
 	for k, v := range sf {
 		if !strings.Contains(k, "inputModel") {
@@ -421,7 +418,66 @@ func (sf specsMap) inputModels() error {
 }
 
 // check checks that required keys are available in sf
-func (sf specsMap) check(required string) error {
+func (sf specsMap) check() error {
+	const (
+		// required has the minimum field list must have at least these entries
+		required = "buildData, buildModel, assessModel, outDir, modelTable"
+
+		requiredData = `
+          sampleSize1, strats1, sampleSize2, strats2, where1, where2, mtgDb, econDb, pass1Strat, pass1Sample,
+          pass2Strat, pass2Sample, mtgFields, econFields, target, targetType`
+
+		requiredModel = `
+          layer1, batchSize, epochs, earlyStopping, targetType, learningRateStart, learningRateEnd, modelQuery, 
+          validateQuery, target, targetType`
+
+		requiredAssess = "assessQuery"
+	)
+
+	// check for mandatory keys
+	reqd := toSlice(required, ",")
+	for _, req := range reqd {
+		_, ok := sf[req]
+		if !ok {
+			return fmt.Errorf("required key %s not in specs file", req)
+		}
+	}
+
+	sf["outDir"] = slash(sf["outDir"])
+
+	if !sf.buildData() && !sf.buildModel() && !sf.assessModel() {
+		return fmt.Errorf("nothing to do")
+	}
+
+	// check for keys by task
+	reqs := make([]string, 0)
+	if sf.buildData() {
+		reqs = append(reqs, requiredData)
+	}
+	if sf.buildModel() {
+		reqs = append(reqs, requiredModel)
+	}
+	if sf.assessModel() {
+		reqs = append(reqs, requiredAssess)
+	}
+
+	reqd = toSlice(strings.Join(reqs, ","), ",")
+	for _, req := range reqd {
+		_, ok := sf[req]
+		if !ok {
+			return fmt.Errorf("required key %s not in specs file", req)
+		}
+	}
+
+	if e := sf.checkInputModels(); e != nil {
+		return e
+	}
+
+	if !sf.assessModel() {
+		return nil
+	}
+
+	// check more complicated keys that are used in assessment
 	for _, item := range sf.slicer("curves") {
 		if item.feature == "" || len(item.target) == 0 {
 			return fmt.Errorf("curves for %s missing target or slicer", item.name)
@@ -433,16 +489,6 @@ func (sf specsMap) check(required string) error {
 			return fmt.Errorf("curves for %s missing target or slicer", item.name)
 		}
 	}
-
-	reqd := toSlice(required, ",")
-	for _, req := range reqd {
-		_, ok := sf[req]
-		if !ok {
-			return fmt.Errorf("required key %s not in specs file", req)
-		}
-	}
-
-	sf["outDir"] = slash(sf["outDir"])
 
 	return nil
 }
@@ -614,6 +660,12 @@ func (sf specsMap) allFields() []string {
 //
 //	field name 1 {levels}; field name 2 {levels}
 func (sf specsMap) calcFields() []string {
+
+	// If doing assessModel only, then calculated fields will be here
+	if calc, ok := sf["calc"]; ok {
+		return strings.Split(calc, ",")
+	}
+
 	cFlds := make([]string, 0)
 	for k, v := range sf {
 		if !strings.Contains(k, "inputModel") {
@@ -670,6 +722,15 @@ func (sf specsMap) buildModel() bool {
 
 func (sf specsMap) assessModel() bool {
 	return sf["assessModel"] == yes
+}
+
+// The user may specify a directory name other than "graphs" for the graphs directory
+func (sf specsMap) graphsKey() string {
+	if gd, ok := sf["graphs"]; ok {
+		return gd
+	}
+
+	return "graphs"
 }
 
 // readSpecsMap reads the specfile and creates the specMap.
@@ -780,15 +841,13 @@ func readSpecsMap(specFile string) (specsMap, error) {
 		}
 
 		key := strings.ReplaceAll(kv[0], " ", "")
-		if _, ok := sMap[key]; ok {
-			return nil, fmt.Errorf("duplicate key: %s", key)
-		}
 
-		//		ind := 0
-		//		for _, ok := sMap[key]; ok; _, ok = sMap[key] {
-		//			ind++
-		//			key = fmt.Sprintf("%s%d", key, ind)
-		//		}
+		// some keys might have duplicates: "inputModels" may, for instance
+		ind := 0
+		for _, ok := sMap[key]; ok; _, ok = sMap[key] {
+			ind++
+			key = fmt.Sprintf("%s%d", key, ind)
+		}
 
 		sMap[key] = strings.TrimLeft(kv[1], " ")
 
@@ -798,4 +857,90 @@ func readSpecsMap(specFile string) (specsMap, error) {
 	}
 
 	return sMap, nil
+}
+
+// features looks into
+func (sf specsMap) features(modelDir string) error {
+	var fts sea.FTypes
+	var err error
+
+	if sf.buildModel() || !sf.assessModel() {
+		return nil
+	}
+
+	dirList, e := os.ReadDir(modelDir)
+	if e != nil {
+		return e
+	}
+
+	// recurse into directories if they exist
+	hasFiles := false
+	for _, entry := range dirList {
+		// load up the submodel features
+		if entry.IsDir() {
+			if err = sf.features(slash(modelDir + entry.Name())); err != nil {
+				return err
+			}
+		} else {
+			hasFiles = true
+		}
+	}
+
+	if !hasFiles {
+		return nil
+	}
+
+	fileName := fmt.Sprintf("%sfieldDefs.jsn", modelDir)
+
+	if fts, err = sea.LoadFTypes(fileName); err != nil {
+		return err
+	}
+
+	fileName = fmt.Sprintf("%stargets.spec", modelDir)
+	if fHandle, e := os.Open(fileName); e == nil {
+		file := bufio.NewReader(fHandle)
+		ok := true
+		for ok {
+			line, err := file.ReadString('\n')
+			lineSlice := strings.Split(line, "{")
+
+			if len(lineSlice) == 2 {
+				val, ok := sf["calc"]
+				if !ok {
+					sf["calc"] = lineSlice[0]
+					continue
+				}
+				sf["calc"] = fmt.Sprintf("%s,%s", val, lineSlice[0])
+			}
+
+			if err != nil {
+				ok = false
+			}
+		}
+		if err = fHandle.Close(); err != nil {
+			return err
+		}
+	}
+
+	for _, ft := range fts {
+		var addTo string
+		switch ft.Role {
+		case sea.FRCts:
+			addTo = "cts"
+		case sea.FRCat, sea.FREmbed:
+			addTo = "cat"
+		}
+
+		val, ok := sf[addTo]
+		if !ok {
+			sf[addTo] = ft.Name
+			continue
+		}
+
+		if !strings.Contains(val, ft.Name) {
+			sf[addTo] = fmt.Sprintf("%s,%s", val, ft.Name)
+		}
+	}
+
+	return nil
 }
