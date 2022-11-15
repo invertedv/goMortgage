@@ -39,7 +39,7 @@ validateQuery: WITH d AS (SELECT %s FROM %s WHERE bucket in (10,11,12,13,14) lim
 assessQuery: WITH d AS (SELECT %s FROM %s WHERE bucket in (15,16,17,18,19) limit 1250000) select * from d where 1=1   
 
 // output locations
-outDir: /home/will/goMortgage/defPp
+outDir: /home/will/goMortgage/defPpStrat
 pass1Strat: tmp.stratDeath1
 pass1Sample: tmp.sampleDeath1
 pass2Strat: tmp.stratDeath2

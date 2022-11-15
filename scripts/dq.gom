@@ -51,7 +51,7 @@ saveTableTargets: d120{4,5,6,7,8,9,10,11,12}; d30{1}; current{0}
 // existing models that are inputs
 inputModel: Mod
 locationMod: /home/will/goMortgage/mod/
-targetsMod: pMod:1
+targetsMod: pMod{1}
 
 // assessment
 assessAddl: aoIncome50, aoEItb50,  trgPti10, trgPti90, ltv, aoMaxDq12, trgUpbExp, state, aoIncome90, msaLoc,

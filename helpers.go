@@ -156,7 +156,7 @@ func inits(host, user, pw, specsFile string, maxMemory, maxGroupBy int64) (specs
 	return specs, conn, logFile, e
 }
 
-// buildQuery builds a query from a skeleton.  Any time the skeleton contains <key>, where key is a key in replacers
+// buildQuery builds a query from a skeleton.  Any time the skeleton contains <key>-where key is a key in replacers-
 // it is replaced with the value map[key].
 func buildQuery(baseWith string, replacers map[string]string) string {
 	qry := baseWith

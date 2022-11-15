@@ -382,7 +382,6 @@ func (sf specsMap) checkInputModels() error {
 //
 // The output of the model, column 1, will be called pMod and be available as a feature.
 func (sf specsMap) inputModels() error {
-
 	for k, v := range sf {
 		if !strings.Contains(k, "inputModel") {
 			continue
@@ -660,7 +659,6 @@ func (sf specsMap) allFields() []string {
 //
 //	field name 1 {levels}; field name 2 {levels}
 func (sf specsMap) calcFields() []string {
-
 	// If doing assessModel only, then calculated fields will be here
 	if calc, ok := sf["calc"]; ok {
 		return strings.Split(calc, ",")
@@ -733,59 +731,7 @@ func (sf specsMap) graphsKey() string {
 	return "graphs"
 }
 
-// readSpecsMap reads the specfile and creates the specMap.
-func XreadSpecsMap(specFile string) (specsMap, error) {
-	handle, e := os.Open(specFile)
-	if e != nil {
-		return nil, e
-	}
-	defer func() { _ = handle.Close() }()
-
-	rdr := bufio.NewReader(handle)
-
-	sMap := make(specsMap)
-	for {
-		var line string
-		line, e = rdr.ReadString('\n')
-		line = strings.TrimLeft(strings.TrimRight(line, "\n"), " ")
-		if e == io.EOF {
-			break
-		}
-		if e != nil {
-			return nil, e
-		}
-		// skip blank lines
-		if strings.TrimRight(strings.ReplaceAll(line, " ", ""), "\n") == "" {
-			continue
-		}
-		// skip comments
-		if line[0:2] == "//" {
-			continue
-		}
-
-		if ind := strings.Index(line, "//"); ind >= 0 {
-			line = line[0:ind]
-			line = strings.TrimRight(line, " ")
-		}
-
-		kv := strings.SplitN(line, ":", 2)
-		if len(kv) != 2 {
-			return nil, fmt.Errorf("bad key val: %s in specs file %s", line, specFile)
-		}
-
-		key := strings.ReplaceAll(kv[0], " ", "")
-		ind := 0
-		for _, ok := sMap[key]; ok; _, ok = sMap[key] {
-			ind++
-			key = fmt.Sprintf("%s%d", key, ind)
-		}
-		sMap[key] = strings.TrimLeft(kv[1], " ")
-	}
-
-	return sMap, nil
-}
-
-// readSpecsMap reads the specfile and creates the specMap.
+// readSpecsMap reads the .gom and creates the specMap.
 func readSpecsMap(specFile string) (specsMap, error) {
 	handle, e := os.Open(specFile)
 	if e != nil {
@@ -859,7 +805,11 @@ func readSpecsMap(specFile string) (specsMap, error) {
 	return sMap, nil
 }
 
-// features looks into
+// features looks into modelDir directory to determine the features required by the model.
+// It recurses into subdirectories to do the same for input models.
+// It appends the values it finds to the "cats" and "cts" keys in sf.
+// It does not need to distinguish between one-hot and embedded features since both require the feature to be
+// converted to one-hot.
 func (sf specsMap) features(modelDir string) error {
 	var fts sea.FTypes
 	var err error
@@ -878,8 +828,8 @@ func (sf specsMap) features(modelDir string) error {
 	for _, entry := range dirList {
 		// load up the submodel features
 		if entry.IsDir() {
-			if err = sf.features(slash(modelDir + entry.Name())); err != nil {
-				return err
+			if errx := sf.features(slash(modelDir + entry.Name())); errx != nil {
+				return errx
 			}
 		} else {
 			hasFiles = true
@@ -901,24 +851,24 @@ func (sf specsMap) features(modelDir string) error {
 		file := bufio.NewReader(fHandle)
 		ok := true
 		for ok {
-			line, err := file.ReadString('\n')
+			line, errx := file.ReadString('\n')
 			lineSlice := strings.Split(line, "{")
 
 			if len(lineSlice) == 2 {
-				val, ok := sf["calc"]
-				if !ok {
+				val, okx := sf["calc"]
+				if !okx {
 					sf["calc"] = lineSlice[0]
 					continue
 				}
 				sf["calc"] = fmt.Sprintf("%s,%s", val, lineSlice[0])
 			}
 
-			if err != nil {
+			if errx != nil {
 				ok = false
 			}
 		}
-		if err = fHandle.Close(); err != nil {
-			return err
+		if errx := fHandle.Close(); errx != nil {
+			return errx
 		}
 	}
 

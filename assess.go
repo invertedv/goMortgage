@@ -2,26 +2,30 @@ package main
 
 import (
 	"fmt"
-	grob "github.com/MetalBlueberry/go-plotly/graph_objects"
-	"github.com/invertedv/chutils"
-	sea "github.com/invertedv/seafan"
 	"math"
 	"os"
 	"time"
+
+	grob "github.com/MetalBlueberry/go-plotly/graph_objects"
+	"github.com/invertedv/chutils"
+	sea "github.com/invertedv/seafan"
 )
 
+// assessModel drives the model assessment based on the user specs in the .gom file.
 func assessModel(specs specsMap, conn *chutils.Connect, log *os.File) error {
 	var (
 		fts        sea.FTypes
 		assessPipe sea.Pipeline
 		e          error
 	)
+
 	start := time.Now()
 	logger(log, fmt.Sprintf("starting assessment @ %s", start.Format(time.UnixDate)), true)
 
 	if fts, e = sea.LoadFTypes(specs["modelDir"] + "fieldDefs.jsn"); e != nil {
 		return e
 	}
+
 	obsFt := fts.Get(specs.target())
 
 	// assess pipeline
@@ -39,7 +43,7 @@ func assessModel(specs specsMap, conn *chutils.Connect, log *os.File) error {
 		}
 	}
 
-	// marginal and segPlot plots
+	// Marginal and KS/Decile/SegPlot plots
 	for _, slice := range specs.slicer("assess") {
 		sl := slice // bad to pass for var as a pointer
 
@@ -215,7 +219,7 @@ func marginal(specs specsMap, valSpec *slices, baseFt, obsFt *sea.FType, fts sea
 	return nil
 }
 
-// assess generates KS and decile plots of the features in the model plus any fields specified by the key assessAddl.
+// assess generates KS, Decile and SegPlot plots of the features in the model plus any fields specified by the key assessAddl.
 //
 //   - segSpec : feature to segment the output on.
 //   - obsFT: sea.FType of the target field
@@ -320,10 +324,15 @@ func assess(pipe sea.Pipeline, specs specsMap, obsFt *sea.FType, segSpec *slices
 		pltTitle := fmt.Sprintf("%s<br>%s<br>restrict %s", specs.title(), segSpec.name, baseSl.Title())
 		pd.YTitle, pd.XTitle, pd.STitle = "", "", ""
 
+		// get fitted and observed values
 		x := segPipe.Get("fit")
 		y := segPipe.Get("obs")
+
+		// ranges for graphs
 		minVal := math.Min(x.Summary.DistrC.Q[2], y.Summary.DistrC.Q[2])
 		maxVal := math.Max(x.Summary.DistrC.Q[len(x.Summary.DistrC.Q)-3], y.Summary.DistrC.Q[len(y.Summary.DistrC.Q)-3])
+
+		// structure needed for KS and Decile plots
 		xy, e = sea.NewXY(x.Data.([]float64), y.Data.([]float64))
 		if e != nil {
 			return e
@@ -344,6 +353,7 @@ func assess(pipe sea.Pipeline, specs specsMap, obsFt *sea.FType, segSpec *slices
 			return e1
 		}
 
+		// run through the fields we're making SegPlots for
 		for _, fld := range specs.assessFields() {
 			ft := pipe.GetFType(fld)
 			if ft == nil {
