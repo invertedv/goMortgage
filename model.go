@@ -128,7 +128,7 @@ func model(specs specsMap, conn *chutils.Connect, log *os.File) error {
 		return e
 	}
 
-	if er := fts.Save(specs["modelDir"] + "fieldDefs.jsn"); er != nil {
+	if er := fts.Save(specs.modelDir() + "fieldDefs.jsn"); er != nil {
 		return er
 	}
 

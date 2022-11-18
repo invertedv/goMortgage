@@ -42,6 +42,22 @@ func (sf specsMap) getQuery(table string) string {
 	return fmt.Sprintf(sf[key], flds, sf["modelTable"]) + " " // add trailing blank
 }
 
+func (sf specsMap) biasQuery() string {
+	if bq, ok := sf["biasQuery"]; ok {
+		return bq
+	}
+
+	return ""
+}
+
+func (sf specsMap) biasDir() string {
+	if bd, ok := sf["biasDir"]; ok {
+		return bd
+	}
+
+	return ""
+}
+
 // get returns the value in sp
 func (sf specsMap) get(key string) string {
 	if val, ok := sf[key]; ok {
@@ -472,6 +488,11 @@ func (sf specsMap) check() error {
 		return e
 	}
 
+	if sf.biasQuery() != "" && sf.biasDir() == "" {
+		return fmt.Errorf("must specify biasDir if have biasQuery")
+	}
+
+	// The remainder is specific to assess
 	if !sf.assessModel() {
 		return nil
 	}
@@ -619,9 +640,24 @@ func (sf specsMap) modelRoot() string {
 	return sf["modelDir"] + "model"
 }
 
+func (sf specsMap) GetKeyVal(key string, must bool) string {
+	val, ok := sf[key]
+
+	if must && !ok {
+		panic(fmt.Sprintf("no entry for key %s", key))
+	}
+
+	return val
+}
+
 // costDir returns the directory for the cost graphs
 func (sf specsMap) costDir() string {
-	return sf["costDir"]
+	return sf.GetKeyVal("costDir", true)
+}
+
+// modelDir returns the directory for the model
+func (sf specsMap) modelDir() string {
+	return sf.GetKeyVal("modelDir", true)
 }
 
 // allFields returns a slice of all the fields required by the run
@@ -729,6 +765,15 @@ func (sf specsMap) graphsKey() string {
 	}
 
 	return "graphs"
+}
+
+// The user may specify a directory name other than "model" for the model directory
+func (sf specsMap) modelKey() string {
+	if md, ok := sf["model"]; ok {
+		return md
+	}
+
+	return "model"
 }
 
 // readSpecsMap reads the .gom and creates the specMap.

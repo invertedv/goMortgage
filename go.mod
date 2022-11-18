@@ -11,6 +11,8 @@ require (
 	github.com/invertedv/seafan v0.0.30
 )
 
+require gonum.org/v1/gonum v0.12.0
+
 require (
 	github.com/apache/arrow/go/arrow v0.0.0-20210105145422-88aaea5262db // indirect
 	github.com/awalterschulze/gographviz v0.0.0-20190221210632-1e9ccb565bca // indirect
@@ -32,9 +34,10 @@ require (
 	go.opentelemetry.io/otel v1.9.0 // indirect
 	go.opentelemetry.io/otel/trace v1.9.0 // indirect
 	go4.org/unsafe/assume-no-moving-gc v0.0.0-20201222180813-1025295fd063 // indirect
+	golang.org/x/exp v0.0.0-20191002040644-a1355ae1e2c3 // indirect
 	golang.org/x/sys v0.0.0-20220811171246-fbc7d0a398ab // indirect
+	golang.org/x/tools v0.1.9 // indirect
 	golang.org/x/xerrors v0.0.0-20200804184101-5ec99f83aff1 // indirect
-	gonum.org/v1/gonum v0.11.0 // indirect
 	google.golang.org/protobuf v1.27.1 // indirect
 	gorgonia.org/cu v0.9.3 // indirect
 	gorgonia.org/dawson v1.2.0 // indirect

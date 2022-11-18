@@ -22,7 +22,7 @@ func assessModel(specs specsMap, conn *chutils.Connect, log *os.File) error {
 	start := time.Now()
 	logger(log, fmt.Sprintf("starting assessment @ %s", start.Format(time.UnixDate)), true)
 
-	if fts, e = sea.LoadFTypes(specs["modelDir"] + "fieldDefs.jsn"); e != nil {
+	if fts, e = sea.LoadFTypes(specs.modelDir() + "fieldDefs.jsn"); e != nil {
 		return e
 	}
 
@@ -30,6 +30,10 @@ func assessModel(specs specsMap, conn *chutils.Connect, log *os.File) error {
 
 	// assess pipeline
 	if assessPipe, e = newPipe(specs.getQuery("assess"), "Assess data", specs, 0, fts, conn); e != nil {
+		return e
+	}
+
+	if e = BiasCorrect(assessPipe, specs, conn, log); e != nil {
 		return e
 	}
 
@@ -86,7 +90,7 @@ func curves(pipe sea.Pipeline, specs specsMap, obsFt *sea.FType, curveSpec *slic
 		FileName: fmt.Sprintf("%s%s.html", specs["curvesDir"], curveSpec.shortName),
 	}
 
-	modelLoc := specs["modelDir"] + "model"
+	modelLoc := specs.modelDir() + "model"
 
 	nnP, e := sea.PredictNN(modelLoc, pipe, false)
 	if e != nil {
@@ -203,7 +207,7 @@ func marginal(specs specsMap, valSpec *slices, baseFt, obsFt *sea.FType, fts sea
 		for _, fld := range specs.allFeatures() {
 			pd.Title = fmt.Sprintf("%s<br>metric %s restrict %s = %v", specs.title(), valSpec.name, valSpec.feature, lvl)
 			pd.FileName = fmt.Sprintf("%s%s.html", pathMarg, fld)
-			modelLoc := specs["modelDir"] + "model"
+			modelLoc := specs.modelDir() + "model"
 			fldName := fld
 
 			if pipe.GetFType(fld).Role == sea.FRCat {
@@ -245,7 +249,7 @@ func assess(pipe sea.Pipeline, specs specsMap, obsFt *sea.FType, segSpec *slices
 		return e
 	}
 
-	modelLoc := specs["modelDir"] + "model"
+	modelLoc := specs.modelDir() + "model"
 
 	nnP, e := sea.PredictNN(modelLoc, pipe, false)
 	if e != nil {

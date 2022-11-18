@@ -7,7 +7,7 @@ toInt32(aoAge/12) AS ageYr,
 cltv > ltv ? 'Y' : 'N' AS hasSecond,
 numBorr > 1 ? 'Y' : 'N' AS coBorr,
 aoAge <= 36 AND pPen = 'Y' ? 'Y' : 'N' AS pPen36,
-'No Groups' AS noGroups,
+'Overall' AS noGroups,
 
 mon.month AS aoDt,
 mon.dq AS aoDq,

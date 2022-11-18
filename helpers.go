@@ -85,15 +85,14 @@ func inits(host, user, pw, specsFile string, maxMemory, maxGroupBy int64) (specs
 			return nil, nil, nil, er
 		}
 
-		if specs["modelDir"], e = makeSubDir(specs["outDir"], "model"); e != nil {
+		if specs["modelDir"], e = makeSubDir(specs["outDir"], specs.modelKey()); e != nil {
 			return nil, nil, nil, e
 		}
 
 	case false:
-		specs["modelDir"] = fmt.Sprintf("%smodel/", slash(specs["outDir"]))
-		// TODO check outdir exists, and model files
+		specs["modelDir"] = fmt.Sprintf("%s%s/", slash(specs["outDir"]), slash(specs.modelKey()))
 
-		if er := os.RemoveAll(fmt.Sprintf("%sgraphs", slash(specs["outDir"]))); er != nil {
+		if er := os.RemoveAll(fmt.Sprintf("%s%s", slash(specs["outDir"]), specs.graphsKey())); er != nil {
 			return nil, nil, nil, er
 		}
 	}
@@ -122,14 +121,14 @@ func inits(host, user, pw, specsFile string, maxMemory, maxGroupBy int64) (specs
 		return nil, nil, nil, e
 	}
 
-	if specs["inputDir"], e = makeSubDir(specs["modelDir"], "inputModels"); e != nil {
+	if specs["inputDir"], e = makeSubDir(specs.modelDir(), "inputModels"); e != nil {
 		return nil, nil, nil, e
 	}
 
 	// just doing assessment ... append to existing log file, don't copy .gom file or input models
 	if !specs.buildData() && !specs.buildModel() {
 		// load up the needed cts and cat feature list in this case
-		if er := specs.features(specs["modelDir"]); er != nil {
+		if er := specs.features(specs.modelDir()); er != nil {
 			return nil, nil, nil, er
 		}
 
@@ -216,6 +215,7 @@ func copyFiles(fromDir, toDir string) error {
 // makeSubDir creates subDir under dir and returns the full path to it.
 func makeSubDir(dir, subDir string) (path string, err error) {
 	path = slash(dir) + slash(subDir)
+
 	if _, err = os.Stat(path); os.IsNotExist(err) {
 		err = os.Mkdir(slash(dir)+subDir, os.ModePerm)
 		return
@@ -244,7 +244,7 @@ func plotCosts(fit *sea.Fit, costName string, specs specsMap) error {
 		Height:   specs.plotHeight(),
 		Width:    specs.plotWidth(),
 		Show:     specs.plotShow(),
-		FileName: specs.costDir() + "modelSample.html", //   Specs["costDir"]
+		FileName: specs.costDir() + "modelSample.html",
 	}, true); e != nil {
 		return e
 	}

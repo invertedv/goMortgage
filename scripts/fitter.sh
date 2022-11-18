@@ -5,5 +5,5 @@ read -p "User: " user
 read -s -p "Password: " password
 echo ""
 
-./goMortgage -user $user -pw $password -specs /home/will/GolandProjects/goMortgage/scripts/defPpEvenStrat.gom
+./goMortgage -user $user -pw $password -specs /home/will/GolandProjects/goMortgage/scripts/defPpEAndS.gom
 
