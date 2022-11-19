@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"io"
 	"math"
 	"os"
 	"time"
@@ -14,7 +13,6 @@ import (
 	"gorgonia.org/tensor"
 
 	"github.com/invertedv/chutils"
-	s "github.com/invertedv/chutils/sql"
 	sea "github.com/invertedv/seafan"
 )
 
@@ -79,16 +77,9 @@ func biasCorrect(specs specsMap, conn *chutils.Connect, log *os.File) error {
 		return fmt.Errorf("bias correction: error in ModSpec")
 	}
 
-	biasQ := specs.biasQuery()
-	if biasQ == "" {
-		return nil
-	}
-
-	if sseFn, bAdj, e = buildObj(modelPipe, nnModel, biasQ, specs, conn); e != nil {
+	if sseFn, bAdj, e = buildObj(modelPipe, nnModel, log); e != nil {
 		return e
 	}
-
-	logger(log, "conducting bias correction", true)
 
 	grad := func(grad, x []float64) {
 		fd.Gradient(grad, sseFn, x, nil)
@@ -145,8 +136,7 @@ func biasCorrect(specs specsMap, conn *chutils.Connect, log *os.File) error {
 	return nil
 }
 
-func buildObj(pipe sea.Pipeline, nnModel *sea.NNModel, biasQuery string, specs specsMap, conn *chutils.Connect) (objFn, []float64, error) {
-
+func buildObj(pipe sea.Pipeline, nnModel *sea.NNModel, log *os.File) (objFn, []float64, error) {
 	// get fit probabilities
 	probs := nnModel.FitSlice()
 
@@ -158,9 +148,19 @@ func buildObj(pipe sea.Pipeline, nnModel *sea.NNModel, biasQuery string, specs s
 	nRow := pipe.Rows()
 	logOdds := make([]float64, nRow*(nCol-1))
 
+	trgFt := pipe.GetFType(nnModel.ModSpec().TargetName())
+	if trgFt == nil {
+		return nil, nil, fmt.Errorf("target is missing from pipeline, bias corrections")
+	}
+
+	trgGData := pipe.Get(trgFt.From)
+	trgData := trgGData.Data.([]int32)
+	trgRates := make([]float64, nCol)
+
 	// logodds is log(p[c]/p[nCol]) where c runs through first nCol-1 columns
 	avgLogs := make([]float64, nCol-1)
 	for row := 0; row < nRow; row++ {
+		trgRates[trgData[row]]++
 		for col := 0; col < nCol-1; col++ {
 			pDen := probs[row*nCol+nCol-1]
 			pNum := probs[row*nCol+col]
@@ -175,61 +175,11 @@ func buildObj(pipe sea.Pipeline, nnModel *sea.NNModel, biasQuery string, specs s
 		}
 	}
 
-	// get target average for each level of target
-	biasQ := s.NewReader(biasQuery, conn)
-	if e := biasQ.Init("", chutils.MergeTree); e != nil {
-		return nil, nil, e
-	}
-
-	targets := make([]float64, 0)
-	vals := make([]any, 0)
-
-	for {
-		rowVal, _, e := biasQ.Read(1, false)
-		if e != nil && e != io.EOF {
-			return nil, nil, e
-		}
-
-		if e != nil {
-			break
-		}
-
-		if len(rowVal[0]) != 2 {
-			return nil, nil, fmt.Errorf("bias query can return only two fields, got %d", len(rowVal))
-		}
-
-		val1 := rowVal[0][1]
-		flt, ok := val1.(*float64)
-		if !ok {
-			return nil, nil, fmt.Errorf("bias query value is not float64 %v", rowVal[0][1])
-		}
-
-		vals = append(vals, rowVal[0][0])
-		targets = append(targets, *flt)
-	}
-
-	if len(targets) != nCol {
-		return nil, nil, fmt.Errorf("bias query returned %d rows, expected %d rows", len(targets), nCol)
-	}
-
-	targetsOrdered := make([]float64, nCol)
-	ft := pipe.GetFType(specs.target())
-
-	if ft == nil {
-		return nil, nil, fmt.Errorf("target is missing from pipeline, bias corrections")
-	}
-
-	if ft.FP.Lvl == nil {
-		return nil, nil, fmt.Errorf("target in bias pipeline isn't categorical")
-	}
-
 	for ind := 0; ind < nCol; ind++ {
-		indLoc, ok := ft.FP.Lvl[vals[ind]]
-		if !ok {
-			return nil, nil, fmt.Errorf("value not in target levels %v", vals[ind])
-		}
-		targetsOrdered[indLoc] = targets[ind]
+		trgRates[ind] /= float64(nRow)
 	}
+
+	logger(log, fmt.Sprintf("bias correction target rates: %v", trgRates), true)
 
 	// build objective function for optimizer...sse of average phat to bias query target
 	biasSse := func(biasAdj []float64) float64 {
@@ -257,18 +207,17 @@ func buildObj(pipe sea.Pipeline, nnModel *sea.NNModel, biasQuery string, specs s
 		wts := []float64{1.0, 1.0, 1.0}
 		for col := 0; col < nCol; col++ {
 			avg := avgP[col] / nFlt
-			errv := avg - targetsOrdered[col]
+			errv := avg - trgRates[col]
 			sse += errv * errv * wts[col]
-			// 9.118235469254579 5.518683539248588]
-			// sse -= targetsOrdered[col] * math.Log(10000000.0*avg)
 		}
+
 		return sse
 	}
 
 	// starting values
 	var bAdj = make([]float64, nnModel.Cols()-1)
 	for ind := 0; ind < len(bAdj); ind++ {
-		targ := math.Log(targetsOrdered[ind] / targetsOrdered[nCol-1])
+		targ := math.Log(trgRates[ind] / trgRates[nCol-1])
 		bAdj[ind] = targ - avgLogs[ind]/float64(nRow)
 	}
 

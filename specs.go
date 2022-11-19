@@ -42,14 +42,6 @@ func (sf specsMap) getQuery(table string) string {
 	return fmt.Sprintf(sf[key], flds, sf["modelTable"]) + " " // add trailing blank
 }
 
-func (sf specsMap) biasQuery() string {
-	if bq, ok := sf["biasQuery"]; ok {
-		return bq
-	}
-
-	return ""
-}
-
 func (sf specsMap) biasDir() string {
 	if bd, ok := sf["biasDir"]; ok {
 		return bd
@@ -448,7 +440,7 @@ func (sf specsMap) check() error {
 
 		requiredAssess = "assessQuery"
 
-		requiredBias = "modelQuery, biasDir, biasQuery"
+		requiredBias = "modelQuery, biasDir"
 	)
 
 	// check for mandatory keys
