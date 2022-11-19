@@ -33,10 +33,6 @@ func assessModel(specs specsMap, conn *chutils.Connect, log *os.File) error {
 		return e
 	}
 
-	if e = BiasCorrect(assessPipe, specs, conn, log); e != nil {
-		return e
-	}
-
 	logger(log, fmt.Sprintf("\n\n%v", assessPipe), false)
 
 	// plot curves

@@ -447,6 +447,8 @@ func (sf specsMap) check() error {
           validateQuery, target, targetType`
 
 		requiredAssess = "assessQuery"
+
+		requiredBias = "modelQuery, biasDir, biasQuery"
 	)
 
 	// check for mandatory keys
@@ -460,7 +462,7 @@ func (sf specsMap) check() error {
 
 	sf["outDir"] = slash(sf["outDir"])
 
-	if !sf.buildData() && !sf.buildModel() && !sf.assessModel() {
+	if !sf.buildData() && !sf.buildModel() && !sf.biasCorrect() && !sf.assessModel() {
 		return fmt.Errorf("nothing to do")
 	}
 
@@ -469,9 +471,15 @@ func (sf specsMap) check() error {
 	if sf.buildData() {
 		reqs = append(reqs, requiredData)
 	}
+
 	if sf.buildModel() {
 		reqs = append(reqs, requiredModel)
 	}
+
+	if sf.biasCorrect() {
+		reqs = append(reqs, requiredBias)
+	}
+
 	if sf.assessModel() {
 		reqs = append(reqs, requiredAssess)
 	}
@@ -486,10 +494,6 @@ func (sf specsMap) check() error {
 
 	if e := sf.checkInputModels(); e != nil {
 		return e
-	}
-
-	if sf.biasQuery() != "" && sf.biasDir() == "" {
-		return fmt.Errorf("must specify biasDir if have biasQuery")
 	}
 
 	// The remainder is specific to assess
@@ -640,7 +644,7 @@ func (sf specsMap) modelRoot() string {
 	return sf["modelDir"] + "model"
 }
 
-func (sf specsMap) GetKeyVal(key string, must bool) string {
+func (sf specsMap) getkeyVal(key string, must bool) string {
 	val, ok := sf[key]
 
 	if must && !ok {
@@ -652,12 +656,12 @@ func (sf specsMap) GetKeyVal(key string, must bool) string {
 
 // costDir returns the directory for the cost graphs
 func (sf specsMap) costDir() string {
-	return sf.GetKeyVal("costDir", true)
+	return sf.getkeyVal("costDir", true)
 }
 
 // modelDir returns the directory for the model
 func (sf specsMap) modelDir() string {
-	return sf.GetKeyVal("modelDir", true)
+	return sf.getkeyVal("modelDir", true)
 }
 
 // allFields returns a slice of all the fields required by the run
@@ -752,6 +756,13 @@ func (sf specsMap) buildData() bool {
 
 func (sf specsMap) buildModel() bool {
 	return sf["buildModel"] == yes
+}
+
+func (sf specsMap) biasCorrect() bool {
+	if ans, ok := sf["biasCorrect"]; ok {
+		return ans == yes
+	}
+	return false
 }
 
 func (sf specsMap) assessModel() bool {
@@ -859,7 +870,7 @@ func (sf specsMap) features(modelDir string) error {
 	var fts sea.FTypes
 	var err error
 
-	if sf.buildModel() || !sf.assessModel() {
+	if sf.buildModel() || (!sf.biasCorrect() && !sf.assessModel()) {
 		return nil
 	}
 

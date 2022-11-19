@@ -5,6 +5,7 @@ import (
 	"io"
 	"math"
 	"os"
+	"time"
 
 	"gonum.org/v1/gonum/diff/fd"
 	"gonum.org/v1/gonum/mat"
@@ -17,24 +18,12 @@ import (
 	sea "github.com/invertedv/seafan"
 )
 
+// objective function for bias correction
 type objFn func(x []float64) float64
 
-func BiasCorrect(pipe sea.Pipeline, specs specsMap, conn *chutils.Connect, log *os.File) error {
-	var sseFn objFn
-	var bAdj []float64
-	var e error
-	var optimal *optimize.Result
-
-	nnModel, err := sea.PredictNN(specs.modelDir()+"model", pipe, false)
-	if err != nil {
-		return err
-	}
-
-	modSpec := nnModel.ModSpec()
-
-	var outLayer *sea.FCLayer
-	var outLayLoc int
-
+// getOutLayer retrives the output layer from modSpec and returns the layer and its position in modSpec.
+// The nnModel parameters are indexed by the layer position.
+func getOutLayer(modSpec sea.ModSpec) (outLayer *sea.FCLayer, outLayLoc int) {
 	for outLayLoc = len(modSpec); outLayLoc >= 0; outLayLoc-- {
 		outLayer = modSpec.FC(outLayLoc)
 		if outLayer != nil {
@@ -42,8 +31,52 @@ func BiasCorrect(pipe sea.Pipeline, specs specsMap, conn *chutils.Connect, log *
 		}
 	}
 
+	if outLayer == nil {
+		return nil, 0
+	}
+
 	if outLayer.Act != sea.SoftMax {
-		return fmt.Errorf("bias correction: model output is not softmax")
+		return nil, 0
+	}
+
+	return outLayer, outLayLoc
+}
+
+// biasCorrect corrects the bias in a NNModel that is caused by stratifying on the response.
+// The user supplies a query that produces the desired rates
+func biasCorrect(specs specsMap, conn *chutils.Connect, log *os.File) error {
+	var (
+		sseFn     objFn
+		bAdj      []float64
+		e         error
+		optimal   *optimize.Result
+		fts       sea.FTypes
+		modelPipe sea.Pipeline
+	)
+
+	start := time.Now()
+	logger(log, fmt.Sprintf("starting bias correction @ %s", start.Format(time.UnixDate)), true)
+
+	if fts, e = sea.LoadFTypes(specs.modelDir() + "fieldDefs.jsn"); e != nil {
+		return e
+	}
+
+	if modelPipe, e = newPipe(specs.getQuery("model"), "model data", specs, 0, fts, conn); e != nil {
+		return e
+	}
+
+	nnModel, err := sea.PredictNN(specs.modelDir()+"model", modelPipe, false)
+	if err != nil {
+		return err
+	}
+
+	var (
+		outLayer  *sea.FCLayer
+		outLayLoc int
+	)
+
+	if outLayer, outLayLoc = getOutLayer(nnModel.ModSpec()); outLayer == nil {
+		return fmt.Errorf("bias correction: error in ModSpec")
 	}
 
 	biasQ := specs.biasQuery()
@@ -51,7 +84,7 @@ func BiasCorrect(pipe sea.Pipeline, specs specsMap, conn *chutils.Connect, log *
 		return nil
 	}
 
-	if sseFn, bAdj, e = buildObj(pipe, nnModel, biasQ, specs, conn); e != nil {
+	if sseFn, bAdj, e = buildObj(modelPipe, nnModel, biasQ, specs, conn); e != nil {
 		return e
 	}
 
@@ -78,7 +111,7 @@ func BiasCorrect(pipe sea.Pipeline, specs specsMap, conn *chutils.Connect, log *
 	vals := node.Nodes()[0].Value().Data().([]float64)
 
 	if len(vals) != len(optimal.X) {
-		return fmt.Errorf("Bias and Adjustment have differing lengths: %d and %d", len(vals), len(optimal.X))
+		return fmt.Errorf("bias and adjustment have differing lengths: %d and %d", len(vals), len(optimal.X))
 	}
 
 	for ind := 0; ind < len(vals); ind++ {
@@ -96,15 +129,18 @@ func BiasCorrect(pipe sea.Pipeline, specs specsMap, conn *chutils.Connect, log *
 		return e
 	}
 
-	if e = nnModel.Save(loc + "model"); e != nil {
-		return e
-	}
-
 	if e = copyFiles(specs.modelDir(), loc); e != nil {
 		return e
 	}
 
+	if e = nnModel.Save(loc + "model"); e != nil {
+		return e
+	}
+
 	specs["modelDir"] = loc
+
+	elapsed := time.Since(start).Minutes()
+	logger(log, fmt.Sprintf("assessment run time: %0.1f minutes", elapsed), true)
 
 	return nil
 }
@@ -162,7 +198,7 @@ func buildObj(pipe sea.Pipeline, nnModel *sea.NNModel, biasQuery string, specs s
 			return nil, nil, fmt.Errorf("bias query can return only two fields, got %d", len(rowVal))
 		}
 
-		var val1 any = rowVal[0][1]
+		val1 := rowVal[0][1]
 		flt, ok := val1.(*float64)
 		if !ok {
 			return nil, nil, fmt.Errorf("bias query value is not float64 %v", rowVal[0][1])
@@ -221,7 +257,7 @@ func buildObj(pipe sea.Pipeline, nnModel *sea.NNModel, biasQuery string, specs s
 		wts := []float64{1.0, 1.0, 1.0}
 		for col := 0; col < nCol; col++ {
 			avg := avgP[col] / nFlt
-			errv := (avg - targetsOrdered[col])
+			errv := avg - targetsOrdered[col]
 			sse += errv * errv * wts[col]
 			// 9.118235469254579 5.518683539248588]
 			// sse -= targetsOrdered[col] * math.Log(10000000.0*avg)

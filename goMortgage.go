@@ -62,26 +62,32 @@ func main() {
 		panic(e)
 	}
 	defer func() {
-		if e := log.Close(); e != nil {
-			panic(e)
+		if ex := log.Close(); e != nil {
+			panic(ex)
 		}
 	}()
 	defer func() {
-		if e := conn.Close(); e != nil {
-			panic(e)
+		if ex := conn.Close(); e != nil {
+			panic(ex)
 		}
 	}()
 
 	start := time.Now()
 
 	if specs.buildData() {
-		if e := data(specs, conn, log); e != nil {
+		if e = data(specs, conn, log); e != nil {
 			panic(e)
 		}
 	}
 
 	if specs.buildModel() {
-		if e := model(specs, conn, log); e != nil {
+		if e = model(specs, conn, log); e != nil {
+			panic(e)
+		}
+	}
+
+	if specs.biasCorrect() {
+		if e = biasCorrect(specs, conn, log); e != nil {
 			panic(e)
 		}
 	}
