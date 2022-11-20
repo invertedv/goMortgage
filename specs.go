@@ -862,9 +862,10 @@ func (sf specsMap) features(modelDir string) error {
 	var fts sea.FTypes
 	var err error
 
-	if sf.buildModel() || (!sf.biasCorrect() && !sf.assessModel()) {
-		return nil
-	}
+	// HERE: TODO: commented this out
+	//	if sf.buildModel() || (!sf.biasCorrect() && !sf.assessModel()) {
+	//		return nil
+	//	}
 
 	dirList, e := os.ReadDir(modelDir)
 	if e != nil {
@@ -925,12 +926,18 @@ func (sf specsMap) features(modelDir string) error {
 		switch ft.Role {
 		case sea.FRCts:
 			addTo = "cts"
+			if sf.buildModel() {
+				addTo = "addlKeep"
+			}
 		case sea.FRCat, sea.FREmbed:
 			addTo = "cat"
+			if sf.buildModel() {
+				addTo = "addlCats"
+			}
 		}
 
 		val, ok := sf[addTo]
-		if !ok {
+		if !ok || val == "" {
 			sf[addTo] = ft.Name
 			continue
 		}

@@ -150,6 +150,11 @@ func inits(host, user, pw, specsFile string, maxMemory, maxGroupBy int64) (specs
 		return nil, nil, nil, er
 	}
 
+	// HERE: TODO: copied this here
+	if er := specs.features(specs.modelDir()); er != nil {
+		return nil, nil, nil, er
+	}
+
 	logFile, e := os.Create(specs["outDir"] + "model.log")
 
 	return specs, conn, logFile, e
