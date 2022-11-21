@@ -402,7 +402,10 @@ func (sf specsMap) inputModels() error {
 		targets := sf["targets"+modelName]
 
 		path := slash(sf["inputDir"] + modelName)
-		if e := copyFiles(slash(loc)+"model", path); e != nil {
+		//		if e := copyFiles(slash(loc)+"model", path); e != nil {
+		//			return e
+		//		}
+		if e := copyFiles(slash(loc), path); e != nil {
 			return e
 		}
 
@@ -858,7 +861,7 @@ func readSpecsMap(specFile string) (specsMap, error) {
 // It appends the values it finds to the "cats" and "cts" keys in sf.
 // It does not need to distinguish between one-hot and embedded features since both require the feature to be
 // converted to one-hot.
-func (sf specsMap) features(modelDir string) error {
+func (sf specsMap) inFeatures(modelDir string) error {
 	var fts sea.FTypes
 	var err error
 
@@ -877,7 +880,7 @@ func (sf specsMap) features(modelDir string) error {
 	for _, entry := range dirList {
 		// load up the submodel features
 		if entry.IsDir() {
-			if errx := sf.features(slash(modelDir + entry.Name())); errx != nil {
+			if errx := sf.inFeatures(slash(modelDir + entry.Name())); errx != nil {
 				return errx
 			}
 		} else {

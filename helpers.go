@@ -128,7 +128,7 @@ func inits(host, user, pw, specsFile string, maxMemory, maxGroupBy int64) (specs
 	// just doing assessment ... append to existing log file, don't copy .gom file or input models
 	if !specs.buildData() && !specs.buildModel() {
 		// load up the needed cts and cat feature list in this case
-		if er := specs.features(specs.modelDir()); er != nil {
+		if er := specs.inFeatures(specs.modelDir()); er != nil {
 			return nil, nil, nil, er
 		}
 
@@ -150,8 +150,8 @@ func inits(host, user, pw, specsFile string, maxMemory, maxGroupBy int64) (specs
 		return nil, nil, nil, er
 	}
 
-	// HERE: TODO: copied this here
-	if er := specs.features(specs.modelDir()); er != nil {
+	// load up requred features from inputModels (there will be no model yet in modelDir()
+	if er := specs.inFeatures(specs.modelDir()); er != nil {
 		return nil, nil, nil, er
 	}
 
