@@ -16,6 +16,8 @@ import (
 	sea "github.com/invertedv/seafan"
 )
 
+// The functions here are used to bias-correct a model.
+
 // objective function for bias correction
 type objFn func(x []float64) float64
 
@@ -40,8 +42,23 @@ func getOutLayer(modSpec sea.ModSpec) (outLayer *sea.FCLayer, outLayLoc int) {
 	return outLayer, outLayLoc
 }
 
-// biasCorrect corrects the bias in a NNModel that is caused by stratifying on the response.
-// The user supplies a query that produces the desired rates
+// biasCorrect corrects the bias in a NNModel.  This might be caused by stratifying on the response.
+// biasCorrect works by changing the bias vector on the output nodes so that the fitted model hits -- on average --
+// the values of the modelQuery.
+// The process is:
+//  1. Run the model on the modelQuery data.
+//  2. Calculate the values l(i,j) = log(p(i,j)/p(i,m-1)), i=0..n-1, j=0,..,m-2
+//     where p(i,j) is the probability of class j for the ith observation and the model has m classes.
+//     These values are linear in the parameters of the output layer.
+//  3. Let (b(1),..,b(m-2)) be bias adjustments and calculate the adjusted model output as:
+//     p*(i,j) = exp(l*(i,j)) / 1 + sum(exp(l*(i,k))
+//     where
+//     l*(i,j) = l(i,j) + b(j), j=1,..,m-2
+//  4. Let pAvg*(k) = avg(p*(i,i))
+//  5. Let SSE = sum((pAvg*(k) - O(k))**2,
+//     where
+//     O(k) is the average of the number of rows in modelQuery that have class k for the target value.
+//  6. Select (b(1),..,b(m-2)) to minimize SSE.
 func biasCorrect(specs specsMap, conn *chutils.Connect, log *os.File) error {
 	var (
 		sseFn     objFn
@@ -63,6 +80,7 @@ func biasCorrect(specs specsMap, conn *chutils.Connect, log *os.File) error {
 		return e
 	}
 
+	// get model predictions from the unadjusted model.
 	nnModel, err := sea.PredictNN(specs.modelDir()+"model", modelPipe, false)
 	if err != nil {
 		return err
@@ -73,10 +91,12 @@ func biasCorrect(specs specsMap, conn *chutils.Connect, log *os.File) error {
 		outLayLoc int
 	)
 
+	// get the output layer
 	if outLayer, outLayLoc = getOutLayer(nnModel.ModSpec()); outLayer == nil {
 		return fmt.Errorf("bias correction: error in ModSpec")
 	}
 
+	// build the SSE function. bAdj is the starting values for the optimizer.
 	if sseFn, bAdj, e = buildObj(modelPipe, nnModel, log); e != nil {
 		return e
 	}
@@ -89,6 +109,7 @@ func biasCorrect(specs specsMap, conn *chutils.Connect, log *os.File) error {
 	}
 	problem := optimize.Problem{Func: sseFn, Grad: grad, Hess: hess}
 
+	// optimize
 	if optimal, e = optimize.Minimize(problem, bAdj, nil, &optimize.Newton{}); e != nil {
 		return e
 	}
@@ -96,6 +117,7 @@ func biasCorrect(specs specsMap, conn *chutils.Connect, log *os.File) error {
 	logger(log, fmt.Sprintln("bias corrections factors", optimal.X), true)
 	logger(log, fmt.Sprintf("fit SSE: %0.5f", sseFn(optimal.X)), true)
 
+	// insert the optimal into the model
 	nodeName := fmt.Sprintf("lBias%d", outLayLoc)
 	node := nnModel.G().ByName(nodeName)
 	// output bias values
@@ -110,24 +132,26 @@ func biasCorrect(specs specsMap, conn *chutils.Connect, log *os.File) error {
 	}
 
 	t := tensor.New(tensor.WithBacking(vals), tensor.WithShape(1, len(vals)))
-	if e = G.Let(node.Nodes()[0], t); e != nil {
-		return e
+	if ex := G.Let(node.Nodes()[0], t); ex != nil {
+		return ex
 	}
 
 	var loc string
 
+	// save our results.  We'll copy over everything from the source model and then save the NN over the top of it.
 	if loc, e = makeSubDir(specs["outDir"], specs.biasDir()); e != nil {
 		return e
 	}
 
-	if e = copyFiles(specs.modelDir(), loc); e != nil {
-		return e
+	if ex := copyFiles(specs.modelDir(), loc); ex != nil {
+		return ex
 	}
 
-	if e = nnModel.Save(loc + "model"); e != nil {
-		return e
+	if ex := nnModel.Save(loc + "model"); ex != nil {
+		return ex
 	}
 
+	// update the modelDir: key to point to the bias-adjusted model
 	specs["modelDir"] = loc
 
 	elapsed := time.Since(start).Minutes()
@@ -136,6 +160,8 @@ func biasCorrect(specs specsMap, conn *chutils.Connect, log *os.File) error {
 	return nil
 }
 
+// buildObj builds the objective function we're going to optimize to find the bias adjustment.  The formulas are
+// given under biasCorrect.
 func buildObj(pipe sea.Pipeline, nnModel *sea.NNModel, log *os.File) (objFn, []float64, error) {
 	// get fit probabilities
 	probs := nnModel.FitSlice()

@@ -20,7 +20,8 @@ const (
 	plotShow   = false
 )
 
-// specsMap holds the specs provided by the user
+// specsMap holds the specs provided by the user.  Methods are provided to access the keys rather than directly
+// accessing them elsewhere in the code.
 type specsMap map[string]string
 
 // learnRate returns the starting and ending learning rate
@@ -42,6 +43,7 @@ func (sf specsMap) getQuery(table string) string {
 	return fmt.Sprintf(sf[key], flds, sf["modelTable"]) + " " // add trailing blank
 }
 
+// biasDir returns the directory for the bias-corrected model
 func (sf specsMap) biasDir() string {
 	if bd, ok := sf["biasDir"]; ok {
 		return bd
@@ -165,91 +167,6 @@ func (sf specsMap) layers() (model []string) {
 		lyr++
 	}
 	return
-}
-
-// mtgFields returns the Pass3 goMortgage fields from the data source specified in the specs field <mtgFields>
-func (sf specsMap) mtgFields() string {
-	switch sf["mtgFields"] {
-	case fannie:
-		return fannieMtgFields
-	default:
-		return ""
-	}
-}
-
-// goodLoan returns the Pass1 WHERE clause for the data source the restricts selections to loans that pass QA.
-func (sf specsMap) goodLoan() string {
-	switch sf["mtgFields"] {
-	case fannie:
-		return fannieGoodLoan
-	default:
-		return ""
-	}
-}
-
-// pass1Fields returns the Pass1 fields for the data source.
-func (sf specsMap) pass1Fields() string {
-	switch sf["mtgFields"] {
-	case fannie:
-		return fanniePass1
-	default:
-		return ""
-	}
-}
-
-// pass2Fields returns the Pass2 fields for the data source.
-func (sf specsMap) pass2Fields() string {
-	switch sf["mtgFields"] {
-	case fannie:
-		return fanniePass2Fields
-	default:
-		return ""
-	}
-}
-
-// pass3Fields returns the Pass3 fields for the data source.
-func (sf specsMap) pass3Fields() string {
-	switch sf["mtgFields"] {
-	case fannie:
-		return fanniePass3Calcs
-	default:
-		return ""
-	}
-}
-
-// econJoin is called for pass3 which joins the sampled goMortgage data to economic data.
-// The returns are
-//
-//   - table : WITH statement that generates the econ data.
-//   - fields: field list of econ fields to return from query
-//
-// Economic data is pulled at 3 time periods per loan:
-//
-//   - first pay date
-//   - as-of date
-//   - target date
-//
-// To accomodate this, the field list has the form:
-//
-//	<corr><base field> AS <pre><base field>
-//
-// where <base field> is the root field (e.g. HPI), <corr> is the corrlation for the table (since it's joined 3 times)
-// and <pre> is a prefix (org, ao, trg)
-func (sf specsMap) econJoin() (table, fields string) {
-	var fieldList string
-	switch sf["econFields"] {
-	case "zip3":
-		table, fieldList = econTable3, econFields3 // these are embedded files
-	default:
-		return "", ""
-	}
-
-	fields3 := make([]string, 0)
-	fields3 = append(fields3, strings.ReplaceAll(strings.ReplaceAll(fieldList, "<corr>", "b."), "<pre>", "trg"),
-		strings.ReplaceAll(strings.ReplaceAll(fieldList, "<corr>", "c."), "<pre>", "ao"),
-		strings.ReplaceAll(strings.ReplaceAll(fieldList, "<corr>", "d."), "<pre>", "org"),
-		strings.ReplaceAll(strings.ReplaceAll(fieldList, "<corr>", "x2020."), "<pre>", "y20"))
-	return table, strings.Join(fields3, ",")
 }
 
 // batchSize returns batch size
@@ -402,9 +319,7 @@ func (sf specsMap) inputModels() error {
 		targets := sf["targets"+modelName]
 
 		path := slash(sf["inputDir"] + modelName)
-		//		if e := copyFiles(slash(loc)+"model", path); e != nil {
-		//			return e
-		//		}
+
 		if e := copyFiles(slash(loc), path); e != nil {
 			return e
 		}
@@ -738,6 +653,7 @@ func (sf specsMap) queryFields() []string {
 	return qFlds
 }
 
+// title returns user-specified title from title: key
 func (sf specsMap) title() string {
 	if title, ok := sf["title"]; ok {
 		return title
@@ -745,14 +661,17 @@ func (sf specsMap) title() string {
 	return ""
 }
 
+// buildData returns true if buildData: key is yes
 func (sf specsMap) buildData() bool {
 	return sf["buildData"] == yes
 }
 
+// buildModel returns true if buildModel: key is yes
 func (sf specsMap) buildModel() bool {
 	return sf["buildModel"] == yes
 }
 
+// biasCorrect returns true if biasCorrect: key is yes
 func (sf specsMap) biasCorrect() bool {
 	if ans, ok := sf["biasCorrect"]; ok {
 		return ans == yes
@@ -760,11 +679,13 @@ func (sf specsMap) biasCorrect() bool {
 	return false
 }
 
+// assessModel returns true if assessModel: key is yes
 func (sf specsMap) assessModel() bool {
 	return sf["assessModel"] == yes
 }
 
-// The user may specify a directory name other than "graphs" for the graphs directory
+// graphsKey returns the value of the graphs: key. The user may specify a directory name other
+// than "graphs" for the graphs directory.
 func (sf specsMap) graphsKey() string {
 	if gd, ok := sf["graphs"]; ok {
 		return gd
@@ -773,13 +694,116 @@ func (sf specsMap) graphsKey() string {
 	return "graphs"
 }
 
-// The user may specify a directory name other than "model" for the model directory
+// modelKey returns the value of the model: key. The user may specify a directory name other than "model" for
+// the model directory.
 func (sf specsMap) modelKey() string {
 	if md, ok := sf["model"]; ok {
 		return md
 	}
 
 	return "model"
+}
+
+// inFeatures looks into modelDir directory to determine the features required by the model.
+// It recurses into subdirectories to do the same for input models.
+// It appends the values it finds to the "cats" and "cts" keys in sf.
+// It does not need to distinguish between one-hot and embedded features since both require the feature to be
+// converted to one-hot.
+// If the user is building the model, the top directory will be empty, so this will return any features from input models.
+// If the user is running a standalone assess or bias correct, then it will include the main model features.
+// inFeatures will append what it finds to these sf keys: cat, cts, calc, addlCat, addlKeep.
+// If we're building the model: append to addlCat, addlKeep, calc.
+// if we're not building the model: append to cat, cts, calc. Why cat and cts? So the assess runs on these features.
+func (sf specsMap) inFeatures(modelDir string) error {
+	var fts sea.FTypes
+	var err error
+
+	dirList, e := os.ReadDir(modelDir)
+	if e != nil {
+		return e
+	}
+
+	// recurse into directories if they exist.  If any exist, keep going down into them.
+	hasFiles := false
+	for _, entry := range dirList {
+		// load up the submodel features
+		if entry.IsDir() {
+			if errx := sf.inFeatures(slash(modelDir + entry.Name())); errx != nil {
+				return errx
+			}
+		} else {
+			hasFiles = true
+		}
+	}
+
+	// if there are no files, there's nothing to do.
+	if !hasFiles {
+		return nil
+	}
+
+	// look for calculated features
+	fileName := fmt.Sprintf("%stargets.spec", modelDir)
+	if fHandle, e := os.Open(fileName); e == nil {
+		file := bufio.NewReader(fHandle)
+		ok := true
+		for ok {
+			line, errx := file.ReadString('\n')
+			lineSlice := strings.Split(line, "{")
+
+			if len(lineSlice) == 2 {
+				val, okx := sf["calc"]
+				if !okx {
+					sf["calc"] = lineSlice[0]
+					continue
+				}
+				sf["calc"] = fmt.Sprintf("%s,%s", val, lineSlice[0])
+			}
+
+			if errx != nil {
+				ok = false
+			}
+		}
+		if errx := fHandle.Close(); errx != nil {
+			return errx
+		}
+	}
+
+	// load FTypes
+	fileName = fmt.Sprintf("%sfieldDefs.jsn", modelDir)
+
+	if fts, err = sea.LoadFTypes(fileName); err != nil {
+		return err
+	}
+
+	// run through FTypes and add to cat/cts or addlKeep/addlCats
+	for _, ft := range fts {
+		var addTo string
+		switch ft.Role {
+		case sea.FRCts:
+			addTo = "cts"
+			if sf.buildModel() {
+				addTo = "addlKeep"
+			}
+		case sea.FRCat, sea.FREmbed:
+			addTo = "cat"
+			if sf.buildModel() {
+				addTo = "addlCats"
+			}
+		}
+
+		// handle cases of list exists or not
+		val, ok := sf[addTo]
+		if !ok || val == "" {
+			sf[addTo] = ft.Name
+			continue
+		}
+
+		if !strings.Contains(val, ft.Name) {
+			sf[addTo] = fmt.Sprintf("%s,%s", val, ft.Name)
+		}
+	}
+
+	return nil
 }
 
 // readSpecsMap reads the .gom and creates the specMap.
@@ -856,99 +880,89 @@ func readSpecsMap(specFile string) (specsMap, error) {
 	return sMap, nil
 }
 
-// features looks into modelDir directory to determine the features required by the model.
-// It recurses into subdirectories to do the same for input models.
-// It appends the values it finds to the "cats" and "cts" keys in sf.
-// It does not need to distinguish between one-hot and embedded features since both require the feature to be
-// converted to one-hot.
-func (sf specsMap) inFeatures(modelDir string) error {
-	var fts sea.FTypes
-	var err error
+// The methods below deal with specific data sources (e.g. fannie)
 
-	// HERE: TODO: commented this out
-	//	if sf.buildModel() || (!sf.biasCorrect() && !sf.assessModel()) {
-	//		return nil
-	//	}
+// mtgFields returns the Pass3 goMortgage fields from the data source specified in the specs field <mtgFields>
+func (sf specsMap) mtgFields() string {
+	switch sf["mtgFields"] {
+	case fannie:
+		return fannieMtgFields
+	default:
+		return ""
+	}
+}
 
-	dirList, e := os.ReadDir(modelDir)
-	if e != nil {
-		return e
+// goodLoan returns the Pass1 WHERE clause for the data source the restricts selections to loans that pass QA.
+func (sf specsMap) goodLoan() string {
+	switch sf["mtgFields"] {
+	case fannie:
+		return fannieGoodLoan
+	default:
+		return ""
+	}
+}
+
+// pass1Fields returns the Pass1 fields for the data source.
+func (sf specsMap) pass1Fields() string {
+	switch sf["mtgFields"] {
+	case fannie:
+		return fanniePass1
+	default:
+		return ""
+	}
+}
+
+// pass2Fields returns the Pass2 fields for the data source.
+func (sf specsMap) pass2Fields() string {
+	switch sf["mtgFields"] {
+	case fannie:
+		return fanniePass2Fields
+	default:
+		return ""
+	}
+}
+
+// pass3Fields returns the Pass3 fields for the data source.
+func (sf specsMap) pass3Fields() string {
+	switch sf["mtgFields"] {
+	case fannie:
+		return fanniePass3Calcs
+	default:
+		return ""
+	}
+}
+
+// econJoin is called for pass3 which joins the sampled goMortgage data to economic data.
+// The returns are
+//
+//   - table : WITH statement that generates the econ data.
+//   - fields: field list of econ fields to return from query
+//
+// Economic data is pulled at 3 time periods per loan:
+//
+//   - first pay date
+//   - as-of date
+//   - target date
+//
+// To accomodate this, the field list has the form:
+//
+//	<corr><base field> AS <pre><base field>
+//
+// where <base field> is the root field (e.g. HPI), <corr> is the corrlation for the table (since it's joined 3 times)
+// and <pre> is a prefix (org, ao, trg)
+func (sf specsMap) econJoin() (table, fields string) {
+	var fieldList string
+	switch sf["econFields"] {
+	case "zip3":
+		table, fieldList = econTable3, econFields3 // these are embedded files
+	default:
+		return "", ""
 	}
 
-	// recurse into directories if they exist
-	hasFiles := false
-	for _, entry := range dirList {
-		// load up the submodel features
-		if entry.IsDir() {
-			if errx := sf.inFeatures(slash(modelDir + entry.Name())); errx != nil {
-				return errx
-			}
-		} else {
-			hasFiles = true
-		}
-	}
-
-	if !hasFiles {
-		return nil
-	}
-
-	fileName := fmt.Sprintf("%sfieldDefs.jsn", modelDir)
-
-	if fts, err = sea.LoadFTypes(fileName); err != nil {
-		return err
-	}
-
-	fileName = fmt.Sprintf("%stargets.spec", modelDir)
-	if fHandle, e := os.Open(fileName); e == nil {
-		file := bufio.NewReader(fHandle)
-		ok := true
-		for ok {
-			line, errx := file.ReadString('\n')
-			lineSlice := strings.Split(line, "{")
-
-			if len(lineSlice) == 2 {
-				val, okx := sf["calc"]
-				if !okx {
-					sf["calc"] = lineSlice[0]
-					continue
-				}
-				sf["calc"] = fmt.Sprintf("%s,%s", val, lineSlice[0])
-			}
-
-			if errx != nil {
-				ok = false
-			}
-		}
-		if errx := fHandle.Close(); errx != nil {
-			return errx
-		}
-	}
-
-	for _, ft := range fts {
-		var addTo string
-		switch ft.Role {
-		case sea.FRCts:
-			addTo = "cts"
-			if sf.buildModel() {
-				addTo = "addlKeep"
-			}
-		case sea.FRCat, sea.FREmbed:
-			addTo = "cat"
-			if sf.buildModel() {
-				addTo = "addlCats"
-			}
-		}
-
-		val, ok := sf[addTo]
-		if !ok || val == "" {
-			sf[addTo] = ft.Name
-			continue
-		}
-
-		if !strings.Contains(val, ft.Name) {
-			sf[addTo] = fmt.Sprintf("%s,%s", val, ft.Name)
-		}
-	}
-
-	return nil
+	fields3 := make([]string, 0)
+	fields3 = append(fields3, strings.ReplaceAll(strings.ReplaceAll(fieldList, "<corr>", "b."), "<pre>", "trg"),
+		strings.ReplaceAll(strings.ReplaceAll(fieldList, "<corr>", "c."), "<pre>", "ao"),
+		strings.ReplaceAll(strings.ReplaceAll(fieldList, "<corr>", "d."), "<pre>", "org"),
+		strings.ReplaceAll(strings.ReplaceAll(fieldList, "<corr>", "x2020."), "<pre>", "y20"))
+	return table, strings.Join(fields3, ",")
 }

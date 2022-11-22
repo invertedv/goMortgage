@@ -75,6 +75,7 @@ func inits(host, user, pw, specsFile string, maxMemory, maxGroupBy int64) (specs
 			return nil, nil, nil, er
 		}
 	}
+
 	switch specs.buildData() || specs.buildModel() {
 	case true:
 		if er := os.RemoveAll(specs["outDir"]); er != nil {
@@ -150,7 +151,8 @@ func inits(host, user, pw, specsFile string, maxMemory, maxGroupBy int64) (specs
 		return nil, nil, nil, er
 	}
 
-	// load up requred features from inputModels (there will be no model yet in modelDir()
+	// load up required features from inputModels (there will be no model yet in modelDir() but inputModels may be
+	// populated)
 	if er := specs.inFeatures(specs.modelDir()); er != nil {
 		return nil, nil, nil, er
 	}
