@@ -132,13 +132,6 @@ func model(specs specsMap, conn *chutils.Connect, log *os.File) error {
 
 	logger(log, fmt.Sprintf("\n\n%v", valPipe), false)
 
-	// assess pipeline
-	//	if assessPipe, e = newPipe(specs.getQuery("assess"), "Assess data", specs, 0, fts, conn); e != nil {
-	//		return e
-	//	}
-
-	//	logger(log, fmt.Sprintf("\n\n%v", assessPipe), false)
-
 	// load model
 	nnModel, e := getModel(specs, modelPipe)
 	if e != nil {

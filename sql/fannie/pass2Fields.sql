@@ -40,4 +40,5 @@ trgZb = '03' ? 'Y' : 'N' AS shortSale,
 toInt32(trgMod=='Y' ? 1 : 0) AS targetMod,
 toInt32(trgMod=='Y' OR trgBap in ['T', 'F', 'R']) AS targetAssist,
 toInt32(multiIf(trgDq < 0, 0, trgDq > 12, 12, trgDq)) AS targetDq,
-toInt32(multiIf(trgZb='00', 0, trgZb='01', 1, 2)) AS targetDeath
+toInt32(multiIf(trgZb='00', 0, trgZb='01', 1, 2)) AS targetDeath,
+toInt32(multiIf(trgZb='00', targetDq, trgZb='01', 13, 14)) AS targetStatus

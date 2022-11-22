@@ -1,0 +1,80 @@
+title: All-In model
+biasCorrect: yes
+assessModel: yes
+
+
+// model settings
+target: targetStatus
+targetType: cat
+modelQuery: SELECT %s FROM %s WHERE bucket < 10
+assessQuery: SELECT %s FROM %s WHERE bucket in (15,16,17,18,19)
+
+// output locations
+outDir: /home/will/goMortgage/allIn
+pass1Strat: tmp.stratAllIn1
+pass1Sample: tmp.sampleAllIn1
+pass2Strat: tmp.stratAllIn2
+pass2Sample: tmp.sampleAllIn2
+modelTable: tmp.model
+biasDir: modelBias
+graphs: graphsStrat
+
+// save Assess Data + model output
+saveTable: tmp.outAllIn
+saveTableTargets: d120{4,5,6,7,8,9,10,11,12}; d30{1}; current{0}, prepay{13}, default{14}
+
+// existing models that are inputs
+inputModel: Mod
+locationMod: /home/will/goMortgage/mod/model
+targetsMod: pMod{1}
+
+// assessment
+assessAddl: aoIncome50, aoEItb50,  trgPti10, trgPti90, ltv, aoMaxDq12, trgUpbExp, state, aoIncome90, msaLoc,
+  aoPropVal, trgPropVal, vintage
+
+assessNameaoDq: D120+
+assessTargetaoDq: 4,5,6,7,8,9,10,11,12
+assessSliceraoDq: aoDqCap6
+
+assessNameaoDqPp: Prepay
+assessTargetaoDqPp: 13
+assessSliceraoDqPp: aoDqCap6
+
+assessNameaoDqDef: Default
+assessTargetaoDqDef: 13
+assessSliceraoDqDef: aoDqCap6
+
+// curves
+
+curvesNameyrQtrPp: Target Quarter, Prepay
+curvesTargetyrQtrPp: 13
+curvesSliceryrQtrPp: trgYrQtr
+
+curvesNameyrQtrDef: Target Quarter, Default
+curvesTargetyrQtrDef: 14
+curvesSliceryrQtrDef: trgYrQtr
+
+curvesNameyrQtrD120: Target Quarter, D120+
+curvesTargetyrQtrD120: 4,5,6,7,8,9,10,11,12
+curvesSliceryrQtrD120: trgYrQtr
+
+curvesNamevintageD120: Vintage, D120+
+curvesTargetvintageD120: 4,5,6,7,8,9,10,11,12
+curvesSlicervintageD120: vintage
+
+curvesNamefmD120: Forecast Month, D120+
+curvesTargetfmD120: 4,5,6,7,8,9,10,11,12
+curvesSlicerfmD120: fcstMonth
+
+curvesNameyrQtrD30: Target Quarter, D30
+curvesTargetyrQtrD30: 1
+curvesSliceryrQtrD30: trgYrQtr
+
+curvesNameyrQtrCur: Target Quarter, Current
+curvesTargetyrQtrCur: 0
+curvesSliceryrQtrCur: trgYrQtr
+
+// general
+show: no
+plotHeight: 1200
+plotWidth: 1600

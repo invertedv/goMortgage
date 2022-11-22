@@ -3,13 +3,14 @@ package main
 import (
 	_ "embed"
 	"fmt"
-	"github.com/ClickHouse/clickhouse-go/v2"
-	"github.com/invertedv/chutils"
-	sea "github.com/invertedv/seafan"
 	"io"
 	"os"
 	"strings"
 	"time"
+
+	"github.com/ClickHouse/clickhouse-go/v2"
+	"github.com/invertedv/chutils"
+	sea "github.com/invertedv/seafan"
 )
 
 // embed sql into strings
@@ -67,17 +68,6 @@ func inits(host, user, pw, specsFile string, maxMemory, maxGroupBy int64) (specs
 	if er := specs.check(); er != nil {
 		return nil, nil, nil, er
 	}
-
-	/*	if specs.buildData() || specs.buildModel() {
-			if er := os.RemoveAll(specs["outDir"]); er != nil {
-				return nil, nil, nil, er
-			}
-
-			if er := os.MkdirAll(specs["outDir"], os.ModePerm); er != nil {
-				return nil, nil, nil, er
-			}
-		}
-	*/
 
 	switch specs.buildData() || specs.buildModel() {
 	case true:
