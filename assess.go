@@ -22,6 +22,7 @@ func assessModel(specs specsMap, conn *chutils.Connect, log *os.File) error {
 	start := time.Now()
 	logger(log, fmt.Sprintf("starting assessment @ %s", start.Format(time.UnixDate)), true)
 
+	fmt.Println(specs.modelDir())
 	if fts, e = sea.LoadFTypes(specs.modelDir() + "fieldDefs.jsn"); e != nil {
 		return e
 	}
@@ -245,7 +246,7 @@ func assess(pipe sea.Pipeline, specs specsMap, obsFt *sea.FType, segSpec *slices
 		return e
 	}
 
-	modelLoc := specs.modelDir() + "model"
+	modelLoc := specs.modelDir() + "model" // model files are modelP.nn and modelN.nn
 
 	nnP, e := sea.PredictNN(modelLoc, pipe, false)
 	if e != nil {
@@ -254,13 +255,16 @@ func assess(pipe sea.Pipeline, specs specsMap, obsFt *sea.FType, segSpec *slices
 
 	nCat := nnP.OutputCols()
 
+	// get model output.
 	fit, e := sea.Coalesce(nnP.FitSlice(), nCat, segSpec.target, false, false, nil)
 	if e != nil {
 		return e
 	}
 
+	// if the target is continuous, the output is normalized ... so reverse that.
 	fit = sea.UnNormalize(fit, obsFt)
 
+	// get observed values
 	obs, e := sea.Coalesce(nnP.ObsSlice(), nCat, segSpec.target, obsFt.Role == sea.FRCat, false, nil)
 	if e != nil {
 		return e
@@ -268,6 +272,7 @@ func assess(pipe sea.Pipeline, specs specsMap, obsFt *sea.FType, segSpec *slices
 
 	obs = sea.UnNormalize(obs, obsFt)
 
+	// add them to the pipeline
 	if e1 := pipe.GData().AppendField(sea.NewRawCast(fit, nil), "fit", sea.FRCts); e1 != nil {
 		return e1
 	}

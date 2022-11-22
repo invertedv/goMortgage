@@ -3,15 +3,16 @@ package main
 import (
 	_ "embed"
 	"fmt"
-	"io"
-	"os"
-	"strings"
-
 	"github.com/ClickHouse/clickhouse-go/v2"
 	"github.com/invertedv/chutils"
 	sea "github.com/invertedv/seafan"
+	"io"
+	"os"
+	"strings"
+	"time"
 )
 
+// embed sql into strings
 var (
 	//go:embed sql/passes/pass1.sql
 	withPass1 string
@@ -62,22 +63,25 @@ func inits(host, user, pw, specsFile string, maxMemory, maxGroupBy int64) (specs
 		return nil, nil, nil, e
 	}
 
+	// check specs make sense
 	if er := specs.check(); er != nil {
 		return nil, nil, nil, er
 	}
 
-	if specs.buildData() || specs.buildModel() {
-		if er := os.RemoveAll(specs["outDir"]); er != nil {
-			return nil, nil, nil, er
-		}
+	/*	if specs.buildData() || specs.buildModel() {
+			if er := os.RemoveAll(specs["outDir"]); er != nil {
+				return nil, nil, nil, er
+			}
 
-		if er := os.MkdirAll(specs["outDir"], os.ModePerm); er != nil {
-			return nil, nil, nil, er
+			if er := os.MkdirAll(specs["outDir"], os.ModePerm); er != nil {
+				return nil, nil, nil, er
+			}
 		}
-	}
+	*/
 
 	switch specs.buildData() || specs.buildModel() {
 	case true:
+		// if we're building the data or the model, clean out the outDir
 		if er := os.RemoveAll(specs["outDir"]); er != nil {
 			return nil, nil, nil, er
 		}
@@ -91,13 +95,15 @@ func inits(host, user, pw, specsFile string, maxMemory, maxGroupBy int64) (specs
 		}
 
 	case false:
-		specs["modelDir"] = fmt.Sprintf("%s%s/", slash(specs["outDir"]), slash(specs.modelKey()))
+		// otherwise, clean out the graphs directory only
+		specs["modelDir"] = fmt.Sprintf("%s%s/", slash(specs["outDir"]), specs.modelKey())
 
 		if er := os.RemoveAll(fmt.Sprintf("%s%s", slash(specs["outDir"]), specs.graphsKey())); er != nil {
 			return nil, nil, nil, er
 		}
 	}
 
+	// create graph directory structure
 	if specs["graphDir"], e = makeSubDir(specs["outDir"], specs.graphsKey()); e != nil {
 		return nil, nil, nil, e
 	}
@@ -122,12 +128,20 @@ func inits(host, user, pw, specsFile string, maxMemory, maxGroupBy int64) (specs
 		return nil, nil, nil, e
 	}
 
+	// create inputModel subdirectory
 	if specs["inputDir"], e = makeSubDir(specs.modelDir(), "inputModels"); e != nil {
 		return nil, nil, nil, e
 	}
 
-	// just doing assessment ... append to existing log file, don't copy .gom file or input models
+	// just doing assessment/bias adjustment ... append to existing log file, don't copy .gom file or input models
 	if !specs.buildData() && !specs.buildModel() {
+		// there is already a .gom file, so copy this to the date/time
+		dttm := time.Now().Format("060102150405")
+		toFile := fmt.Sprintf("%s%sdmodel.gom", specs["outDir"], dttm)
+		if er := copyFile(specsFile, toFile); er != nil {
+			return nil, nil, nil, er
+		}
+
 		// load up the needed cts and cat feature list in this case
 		if er := specs.inFeatures(specs.modelDir()); er != nil {
 			return nil, nil, nil, er
@@ -147,16 +161,17 @@ func inits(host, user, pw, specsFile string, maxMemory, maxGroupBy int64) (specs
 		return nil, nil, nil, er
 	}
 
+	// process any input models
 	if er := specs.inputModels(); er != nil {
 		return nil, nil, nil, er
 	}
 
-	// load up required features from inputModels (there will be no model yet in modelDir() but inputModels may be
-	// populated)
+	// load up required features from inputModels (there will be no model yet in modelDir() but inputModels may be populated)
 	if er := specs.inFeatures(specs.modelDir()); er != nil {
 		return nil, nil, nil, er
 	}
 
+	// crerate log file
 	logFile, e := os.Create(specs["outDir"] + "model.log")
 
 	return specs, conn, logFile, e
@@ -182,6 +197,25 @@ func slash(path string) string {
 	}
 
 	return path + "/"
+}
+
+// copyFile copies sourceFile to destFile
+func copyFile(sourceFile, destFile string) error {
+	inFile, e := os.Open(sourceFile)
+	if e != nil {
+		return e
+	}
+	defer func() { _ = inFile.Close() }()
+
+	outFile, e := os.Create(destFile)
+	if e != nil {
+		return e
+	}
+	defer func() { _ = outFile.Close() }()
+
+	_, e = io.Copy(outFile, inFile)
+
+	return e
 }
 
 // copyFiles recursively copies files from fromDir to toDir
@@ -287,25 +321,6 @@ func toSlice(str, sep string) []string {
 		return nil
 	}
 	return strings.Split(str, sep)
-}
-
-// copyFile copies sourceFile to destFile
-func copyFile(sourceFile, destFile string) error {
-	inFile, e := os.Open(sourceFile)
-	if e != nil {
-		return e
-	}
-	defer func() { _ = inFile.Close() }()
-
-	outFile, e := os.Create(destFile)
-	if e != nil {
-		return e
-	}
-	defer func() { _ = outFile.Close() }()
-
-	_, e = io.Copy(outFile, inFile)
-
-	return e
 }
 
 // logger makes a log entry.

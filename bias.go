@@ -183,8 +183,8 @@ func buildObj(pipe sea.Pipeline, nnModel *sea.NNModel, log *os.File) (objFn, []f
 	trgData := trgGData.Data.([]int32)
 	trgRates := make([]float64, nCol)
 
-	// logodds is log(p[c]/p[nCol]) where c runs through first nCol-1 columns
-	avgLogs := make([]float64, nCol-1)
+	// logodds is log(p[c]/p[nCol-1]) where c runs through first nCol-2 columns.
+	avgLogs := make([]float64, nCol-1) // used to find initial values
 	for row := 0; row < nRow; row++ {
 		trgRates[trgData[row]]++
 		for col := 0; col < nCol-1; col++ {
@@ -215,6 +215,7 @@ func buildObj(pipe sea.Pipeline, nnModel *sea.NNModel, log *os.File) (objFn, []f
 		for row := 0; row < nRow; row++ {
 			tot := 1.0
 
+			// find probabilities using bias adjustment
 			for col := 0; col < nCol-1; col++ {
 				p[col] = math.Exp(logOdds[row*(nCol-1)+col] + biasAdj[col])
 				tot += p[col]
@@ -222,6 +223,7 @@ func buildObj(pipe sea.Pipeline, nnModel *sea.NNModel, log *os.File) (objFn, []f
 
 			p[nCol-1] = 1.0
 
+			// normalize and add to average
 			for col := 0; col < nCol; col++ {
 				p[col] /= tot
 				avgP[col] += p[col]
@@ -230,11 +232,11 @@ func buildObj(pipe sea.Pipeline, nnModel *sea.NNModel, log *os.File) (objFn, []f
 
 		sse := 0.0
 		nFlt := float64(nRow)
-		wts := []float64{1.0, 1.0, 1.0}
 		for col := 0; col < nCol; col++ {
 			avg := avgP[col] / nFlt
+			// difference between dataset observed probability and calculated with bias adjustment
 			errv := avg - trgRates[col]
-			sse += errv * errv * wts[col]
+			sse += errv * errv
 		}
 
 		return sse

@@ -187,6 +187,13 @@ func (sf specsMap) earlyStopping() (int, error) {
 	return int(eStop), e
 }
 
+func (sf specsMap) startFrom() string {
+	if sfrom, ok := sf["startFrom"]; ok {
+		return sfrom
+	}
+	return ""
+}
+
 // plotShow returns true if the user wants to show all the plots in a browser, too.
 func (sf specsMap) plotShow() bool {
 	show, ok := sf["plotShow"]
@@ -346,7 +353,7 @@ func (sf specsMap) inputModels() error {
 func (sf specsMap) check() error {
 	const (
 		// required has the minimum field list must have at least these entries
-		required = "buildData, buildModel, assessModel, outDir, modelTable"
+		required = "outDir"
 
 		requiredData = `
           sampleSize1, strats1, sampleSize2, strats2, where1, where2, mtgDb, econDb, pass1Strat, pass1Sample,
@@ -663,25 +670,38 @@ func (sf specsMap) title() string {
 
 // buildData returns true if buildData: key is yes
 func (sf specsMap) buildData() bool {
-	return sf["buildData"] == yes
+	if val, ok := sf["buildData"]; ok {
+		return val == yes
+	}
+
+	return false
 }
 
 // buildModel returns true if buildModel: key is yes
 func (sf specsMap) buildModel() bool {
-	return sf["buildModel"] == yes
+	if val, ok := sf["buildModel"]; ok {
+		return val == yes
+	}
+
+	return false
 }
 
 // biasCorrect returns true if biasCorrect: key is yes
 func (sf specsMap) biasCorrect() bool {
-	if ans, ok := sf["biasCorrect"]; ok {
-		return ans == yes
+	if val, ok := sf["biasCorrect"]; ok {
+		return val == yes
 	}
+
 	return false
 }
 
 // assessModel returns true if assessModel: key is yes
 func (sf specsMap) assessModel() bool {
-	return sf["assessModel"] == yes
+	if val, ok := sf["assessModel"]; ok {
+		return val == yes
+	}
+
+	return false
 }
 
 // graphsKey returns the value of the graphs: key. The user may specify a directory name other

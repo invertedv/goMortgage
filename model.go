@@ -1,12 +1,5 @@
 package main
 
-//
-// There are 3 datasets used in the building and evaluation of a model:
-//
-//    1. Model Build.  The data used to fit the parameters.
-//    2. Validation.  The data used to assess the model during the build.  This data selects the model to use and
-//         governs early stopping.
-//    3. Assessment.  The data used to build graphical assessments of the final model.
 import (
 	"fmt"
 	"os"
@@ -50,52 +43,46 @@ func modelSpec(specs specsMap) (modSpec sea.ModSpec, err error) {
 // getModel either creates or loads the model to fit
 func getModel(specs specsMap, pipe sea.Pipeline) (*sea.NNModel, error) {
 	// path will be the path to a model whose values we'll use as starting values
-	path, ok := specs["startFrom"]
-
-	switch ok {
-	case true:
+	if path := specs.startFrom(); path != "" {
 		path = fmt.Sprintf("%smodel", slash(path))
 		nnModel, e := sea.LoadNN(path, pipe, true)
 		if e != nil {
 			return nil, e
 		}
+
 		sea.WithCostFn(specs.costFunc())(nnModel)
 		sea.WithName(specs["model"])(nnModel)
 		return nnModel, nil
-
-	case false:
-		modSpec, e := modelSpec(specs)
-		if e != nil {
-			return nil, e
-		}
-
-		return sea.NewNNModel(modSpec, pipe, true,
-			sea.WithCostFn(specs.costFunc()),
-			sea.WithName(specs["model"]))
 	}
 
-	return nil, fmt.Errorf("getModel unknown error")
+	modSpec, e := modelSpec(specs)
+	if e != nil {
+		return nil, e
+	}
+
+	return sea.NewNNModel(modSpec, pipe, true,
+		sea.WithCostFn(specs.costFunc()),
+		sea.WithName(specs["model"]))
 }
 
 // getFTs gets the FTypes to use for all the pipelines if we're starting from an existing model.
 // If we're not, nil is returned.
-func getFts(specs specsMap) sea.FTypes {
-	path, ok := specs["startFrom"]
-	if !ok {
-		return nil
-	}
-	path = fmt.Sprintf("%sfieldDefs.jsn", slash(path))
-	fts, _ := sea.LoadFTypes(path)
+func getFts(specs specsMap) (sea.FTypes, error) {
+	if path := specs.startFrom(); path != "" {
+		path = fmt.Sprintf("%sfieldDefs.jsn", slash(path))
 
-	return fts
+		return sea.LoadFTypes(path)
+	}
+
+	return nil, nil
 }
 
 // model is the core model-building function.
 func model(specs specsMap, conn *chutils.Connect, log *os.File) error {
 	var (
-		e                              error
-		modelPipe, valPipe, assessPipe sea.Pipeline
-		fts                            sea.FTypes
+		e                  error
+		modelPipe, valPipe sea.Pipeline
+		fts                sea.FTypes
 	)
 
 	start := time.Now()
@@ -116,8 +103,14 @@ func model(specs specsMap, conn *chutils.Connect, log *os.File) error {
 		return e
 	}
 
+	// get FTypes if startFrom: key is used, o.w. this is nil
+	startFts, e := getFts(specs)
+	if e != nil {
+		return e
+	}
+
 	if modelPipe, e = newPipe(specs.getQuery("model"), "Modeling data", specs,
-		batchSize, getFts(specs), conn); e != nil {
+		batchSize, startFts, conn); e != nil {
 		return e
 	}
 
@@ -140,11 +133,11 @@ func model(specs specsMap, conn *chutils.Connect, log *os.File) error {
 	logger(log, fmt.Sprintf("\n\n%v", valPipe), false)
 
 	// assess pipeline
-	if assessPipe, e = newPipe(specs.getQuery("assess"), "Assess data", specs, 0, fts, conn); e != nil {
-		return e
-	}
+	//	if assessPipe, e = newPipe(specs.getQuery("assess"), "Assess data", specs, 0, fts, conn); e != nil {
+	//		return e
+	//	}
 
-	logger(log, fmt.Sprintf("\n\n%v", assessPipe), false)
+	//	logger(log, fmt.Sprintf("\n\n%v", assessPipe), false)
 
 	// load model
 	nnModel, e := getModel(specs, modelPipe)
@@ -159,7 +152,7 @@ func model(specs specsMap, conn *chutils.Connect, log *os.File) error {
 		return e
 	}
 
-	// fit model
+	// model fit struct
 	fit := sea.NewFit(nnModel, epochs, modelPipe,
 		sea.WithValidation(valPipe, earlyStopping),
 		sea.WithLearnRate(startLR, endLR),

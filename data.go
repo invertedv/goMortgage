@@ -334,7 +334,7 @@ func data(specs specsMap, conn *chutils.Connect, log *os.File) error {
 }
 
 // addDefault sets the default value for FRCat fields to their mode. The default value can be needed when using the
-// model to predict on new data.
+// model to predict on new data.  The returned FTypes are restricted to those fields in keepFeatures
 func addDefault(pipe sea.Pipeline, keepFeatures []string) (sea.FTypes, error) {
 	fts := pipe.GetFTypes()
 
