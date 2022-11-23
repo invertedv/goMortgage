@@ -463,10 +463,10 @@ func (sf specsMap) ohFields() []string {
 
 // addlCats slice is user-specified additional fields that should be sea.FRCat
 func (sf specsMap) addlCats() []string {
-	if _, ok := sf["addlCats"]; !ok {
+	if _, ok := sf["addlCat"]; !ok {
 		return nil
 	}
-	return toSlice(sf["addlCats"], ",")
+	return toSlice(sf["addlCat"], ",")
 }
 
 // allCat returns the one-hot features plus additional one-hot features specified by the addlCats key in specs.
@@ -724,18 +724,13 @@ func (sf specsMap) modelKey() string {
 	return "model"
 }
 
-// inFeatures looks into modelDir directory to determine the features required by the model.
+// findFeatures looks into modelDir directory to determine the features required by the model.
 // It recurses into subdirectories to do the same for input models.
-// It appends the values it finds to the "cats" and "cts" keys in sf.
-// It does not need to distinguish between one-hot and embedded features since both require the feature to be
-// converted to one-hot.
-// If the user is building the model, the top directory will be empty, so this will return any features from input models.
-// If the user is running a standalone assess or bias correct, then it will include the main model features.
-// inFeatures will append what it finds to these sf keys: cat, cts, calc, addlCat, addlKeep.
-// If we're building the model: append to addlCat, addlKeep, calc.
-// if we're not building the model: append to cat, cts, calc. Why cat and cts? So the assess runs on these features.
-func (sf specsMap) inFeatures(modelDir string) error {
+// It appends the values it finds to the "cats", "cts", "addlCat", "addlKeep" keys in sf.
+// Features in the top-level model are put in "cats" and "cts". Everything else is put in "addlCat", "addlKeep"
+func (sf specsMap) findFeatures(modelDir string, top bool) error {
 	var fts sea.FTypes
+	var modSpec sea.ModSpec
 	var err error
 
 	dirList, e := os.ReadDir(modelDir)
@@ -743,21 +738,27 @@ func (sf specsMap) inFeatures(modelDir string) error {
 		return e
 	}
 
-	// recurse into directories if they exist.  If any exist, keep going down into them.
+	// see what is in here.  If there are files, we process those before recursing down
 	hasFiles := false
+	hasDir := false
 	for _, entry := range dirList {
 		// load up the submodel features
-		if entry.IsDir() {
-			if errx := sf.inFeatures(slash(modelDir + entry.Name())); errx != nil {
-				return errx
-			}
-		} else {
+		switch entry.IsDir() {
+		case true:
+			hasDir = true
+		case false:
 			hasFiles = true
 		}
 	}
 
-	// if there are no files, there's nothing to do.
+	// if there are no files, recurse down
 	if !hasFiles {
+		for _, entry := range dirList {
+			// load up the submodel features
+			if errx := sf.findFeatures(slash(modelDir+entry.Name()), false); errx != nil {
+				return errx
+			}
+		}
 		return nil
 	}
 
@@ -790,6 +791,13 @@ func (sf specsMap) inFeatures(modelDir string) error {
 
 	// load FTypes
 	fileName = fmt.Sprintf("%sfieldDefs.jsn", modelDir)
+	input := ""
+	if top {
+		if modSpec, err = sea.LoadModSpec(fmt.Sprintf("%smodelS.nn", sf.modelDir())); err != nil {
+			return err
+		}
+		input = modSpec[0]
+	}
 
 	if fts, err = sea.LoadFTypes(fileName); err != nil {
 		return err
@@ -801,29 +809,61 @@ func (sf specsMap) inFeatures(modelDir string) error {
 		switch ft.Role {
 		case sea.FRCts:
 			addTo = "cts"
-			if sf.buildModel() {
+			if !inModel(input, ft.Name) {
 				addTo = "addlKeep"
 			}
+
 		case sea.FRCat, sea.FREmbed:
 			addTo = "cat"
-			if sf.buildModel() {
-				addTo = "addlCats"
+			if !inModel(input, ft.Name) {
+				addTo = "addlCat"
 			}
 		}
 
 		// handle cases of list exists or not
 		val, ok := sf[addTo]
 		if !ok || val == "" {
-			sf[addTo] = ft.Name
+			if !sf.haveFeature(ft.Name) {
+				sf[addTo] = ft.Name
+			}
 			continue
 		}
 
-		if !strings.Contains(val, ft.Name) {
+		if !sf.haveFeature(ft.Name) {
 			sf[addTo] = fmt.Sprintf("%s,%s", val, ft.Name)
 		}
 	}
 
+	if hasDir {
+		for _, entry := range dirList {
+			// load up the submodel features
+			if !entry.IsDir() {
+				continue
+			}
+			if errx := sf.findFeatures(slash(modelDir+entry.Name()), false); errx != nil {
+				return errx
+			}
+		}
+	}
+
 	return nil
+}
+
+// haveFeature returns true of feature is in one of these keys: cat, cts, addlCat, addlKeep
+func (sf specsMap) haveFeature(feature string) bool {
+	keys := []string{"cat", "cts", "addlCat", "addlKeep"}
+	for _, key := range keys {
+		if val, ok := sf[key]; ok {
+			vals := strings.Split(val, ",")
+			for _, v := range vals {
+				if v == feature {
+					return true
+				}
+			}
+		}
+	}
+
+	return false
 }
 
 // readSpecsMap reads the .gom and creates the specMap.

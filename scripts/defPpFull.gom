@@ -20,7 +20,7 @@ targetType: cat
 cat: propType, occ, standard, nsDoc, nsUw, hasSecond, harp, aoMod, aoBap, covid, fcType, coBorr, canBe12, purpose, aoPrior30, aoPrior60, aoPrior90p, amType, channel, pPen36
 cts: units, trgEltv, trgRefiIncentive, spread, d120, pModDirect, fcTime, term, trgAge, trgUnempRate, fico, y20PropVal, trgPti50, lbrGrowth, dti, aoMonthsCur
 emb: fcstMonth: 2, aoDq: 5, state: 4, servMapped: 4
-addlCats: targetAssist, targetDq, aoMaxDq12, vintage, aoDqCap6
+addlCat: targetAssist, targetDq, aoMaxDq12, vintage, aoDqCap6
 addlKeep: lnId, aoPropVal, aoMonthsCur
 layer1: FC(size:20, activation:relu)
 //layer3: DropOut(0.1)

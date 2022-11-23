@@ -22,7 +22,6 @@ func assessModel(specs specsMap, conn *chutils.Connect, log *os.File) error {
 	start := time.Now()
 	logger(log, fmt.Sprintf("starting assessment @ %s", start.Format(time.UnixDate)), true)
 
-	fmt.Println(specs.modelDir())
 	if fts, e = sea.LoadFTypes(specs.modelDir() + "fieldDefs.jsn"); e != nil {
 		return e
 	}

@@ -21,7 +21,7 @@ targetType: cat
 cat: propType, occ, nsDoc, nsUw, hasSecond, harp, aoMod, aoBap, covid, fcType, coBorr, canBe12
 cts: units, trgEltv, trgRefiIncentive, spread, d120, pModDirect, fcTime, term, trgAge //, trgUnempRate
 emb: fcstMonth: 2
-addlCats: targetAssist, targetDq, aoMaxDq12,fcstMonth, vintage, aoDqCap6, purpose, aoPrior30, aoPrior60,
+addlCat: targetAssist, targetDq, aoMaxDq12,fcstMonth, vintage, aoDqCap6, purpose, aoPrior30, aoPrior60,
   aoPrior90p, state, amType, aoDq, channel, servMapped, pPen36, standard
 addlKeep: lnId, fico, aoPropVal, dti, aoMonthsCur,lbrGrowth, y20PropVal, trgUnempRate, aoAge
 layer1: FC(size:20, activation:relu)

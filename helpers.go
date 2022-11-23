@@ -133,7 +133,7 @@ func inits(host, user, pw, specsFile string, maxMemory, maxGroupBy int64) (specs
 		}
 
 		// load up the needed cts and cat feature list in this case
-		if er := specs.inFeatures(specs.modelDir()); er != nil {
+		if er := specs.findFeatures(specs.modelDir(), true); er != nil {
 			return nil, nil, nil, er
 		}
 
@@ -157,7 +157,7 @@ func inits(host, user, pw, specsFile string, maxMemory, maxGroupBy int64) (specs
 	}
 
 	// load up required features from inputModels (there will be no model yet in modelDir() but inputModels may be populated)
-	if er := specs.inFeatures(specs.modelDir()); er != nil {
+	if er := specs.findFeatures(specs.modelDir(), true); er != nil {
 		return nil, nil, nil, er
 	}
 
@@ -319,4 +319,23 @@ func logger(log *os.File, text string, toConsole bool) {
 	if toConsole {
 		fmt.Println(text)
 	}
+}
+
+// inModel determines whether the feature is in the input statement from a sea.ModSpec
+func inModel(input, feature string) bool {
+	if len(input) < 5 {
+		return false
+	}
+
+	if input[0:5] != "input" {
+		return false
+	}
+	inputs := strings.Split(input, "+")
+	for _, inp := range inputs {
+		if strings.Contains(inp, feature) {
+			return true
+		}
+	}
+
+	return false
 }
