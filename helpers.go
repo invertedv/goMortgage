@@ -93,7 +93,7 @@ func inits(host, user, pw, specsFile string, maxMemory, maxGroupBy int64) (specs
 		}
 	}
 
-	// create graph directory structure
+	// create graph directory structure.
 	if specs["graphDir"], e = makeSubDir(specs["outDir"], specs.graphsKey()); e != nil {
 		return nil, nil, nil, e
 	}
