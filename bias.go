@@ -110,7 +110,19 @@ func biasCorrect(specs specsMap, conn *chutils.Connect, log *os.File) error {
 	problem := optimize.Problem{Func: sseFn, Grad: grad, Hess: hess}
 
 	// optimize
-	if optimal, e = optimize.Minimize(problem, bAdj, nil, &optimize.Newton{}); e != nil {
+	settings := &optimize.Settings{
+		InitValues:        nil,
+		GradientThreshold: 0,
+		Converger:         nil,
+		MajorIterations:   10,
+		Runtime:           0,
+		FuncEvaluations:   0,
+		GradEvaluations:   0,
+		HessEvaluations:   0,
+		Recorder:          nil,
+		Concurrent:        12,
+	}
+	if optimal, e = optimize.Minimize(problem, bAdj, settings, &optimize.Newton{}); e != nil {
 		return e
 	}
 

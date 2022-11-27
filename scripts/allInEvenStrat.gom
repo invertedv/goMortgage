@@ -1,52 +1,22 @@
-title: All-In model, Strat Data
-buildData: no
-buildModel: yes
+title: All-In model
+biasCorrect: yes
 assessModel: yes
-
-// data build settings
-strats1: aoDt
-sampleSize1: 30000000
-strats2: targetStatus
-sampleSize2: 2000000
-where1: AND aoAge >= 0 AND aoDq >= 0 AND aoDq <= 24 AND aoUpb > 10000 AND mon.zb='00'
-where2:  AND trgZb IN ('00', '01', '03', '09') AND fcstMonth > 0
-mtgDb: mtg.fannie
-mtgFields: fannie
-econDb: econGo.final
-econFields: zip3
 
 // model settings
 target: targetStatus
 targetType: cat
-cat: purpose, propType, occ, amType, standard, nsDoc, nsUw, coBorr, hasSecond, aoPrior30, aoPrior60, aoPrior90p, harp, aoMod, aoBap, channel, covid, fcType
-cts: fico, trgAge, aoAge, term, y20PropVal, units, dti, trgUnempRate, trgEltv, aoMonthsCur, trgPti50, trgRefiIncentive, lbrGrowth, spread, pMod
-emb:  aoDq: 5, state: 4, servMapped: 4, fcstMonth: 2
-addlCat: targetAssist, aoMaxDq12, vintage, aoDqCap6, numBorr
-addlKeep: lnId, fcstMonth
-layer1: FC(size:40, activation:relu)
-layer2: FC(size:20, activation:relu)
-layer3: FC(size:20, activation:relu)
-layer4: FC(size:15, activation:softmax)
-batchSize: 50000
-epochs: 3000
-earlyStopping: 40
-learningRateStart: .0003
-learningRateEnd: .0001
-modelQuery: SELECT %s FROM %s WHERE bucket < 10
-validateQuery: SELECT %s FROM %s WHERE bucket in (10,11,12,13,14)
+modelQuery: WITH d AS (SELECT %s FROM %s WHERE bucket < 10 LIMIT 2000000) SELECT * FROM d WHERE 1=1
 assessQuery: SELECT %s FROM %s WHERE bucket in (15,16,17,18,19)
 
 // output locations
-outDir: /home/will/goMortgage/allInStrat
-pass1Strat: tmp.stratAllIn1
-pass1Sample: tmp.sampleAllIn1
-pass2Strat: tmp.stratAllIn2
-pass2Sample: tmp.sampleAllIn2
+outDir: /home/will/goMortgage/allInIter2
 modelTable: tmp.model
+biasDir: modelBias
 graphs: graphsStrat
 
 // save Assess Data + model output
-saveTable: tmp.outAllIn
+addlKeep: lnId
+saveTable: tmp.outAllInStratIter2
 saveTableTargets: d120{4,5,6,7,8,9,10,11,12}; d30{1}; current{0}; prepay{13}; default{14}
 
 // existing models that are inputs
@@ -71,7 +41,6 @@ assessTargetaoDqDef: 14
 assessSliceraoDqDef: aoDqCap6
 
 // curves
-
 curvesNameyrQtrPp: Target Quarter, Prepay
 curvesTargetyrQtrPp: 13
 curvesSliceryrQtrPp: trgYrQtr

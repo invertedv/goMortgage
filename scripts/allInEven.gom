@@ -1,4 +1,4 @@
-title: All-In model
+title: All-In model, Even Sampling
 buildData: no
 buildModel: yes
 assessModel: yes
@@ -37,7 +37,7 @@ validateQuery: SELECT %s FROM %s WHERE bucket in (10,11,12,13,14)
 assessQuery: SELECT %s FROM %s WHERE bucket in (15,16,17,18,19)
 
 // output locations
-outDir: /home/will/goMortgage/allIn
+outDir: /home/will/goMortgage/allInEvenIter2
 pass1Strat: tmp.stratAllIn1
 pass1Sample: tmp.sampleAllIn1
 pass2Strat: tmp.stratAllIn2
@@ -46,7 +46,7 @@ modelTable: tmp.modelAllIn
 graphs: graphsEven
 
 // save Assess Data + model output
-saveTable: tmp.outAllIn
+saveTable: tmp.outAllInIter2
 saveTableTargets: d120{4,5,6,7,8,9,10,11,12}; d30{1}; current{0}; prepay{13}; default{14}
 
 // existing models that are inputs
@@ -67,7 +67,7 @@ assessTargetaoDqPp: 13
 assessSliceraoDqPp: aoDqCap6
 
 assessNameaoDqDef: Default
-assessTargetaoDqDef: 13
+assessTargetaoDqDef: 14
 assessSliceraoDqDef: aoDqCap6
 
 // curves
