@@ -2,9 +2,9 @@ title: Build strat data for all-in build bias correct.
 buildData: yes
 
 // data settings
-strats1: state, aoDt, aoAge
+strats1: state, aoDt, aoAge, aoDqCap6
 sampleSize1: 30000000
-strats2: fcstMonth, month, aoDqCap6
+strats2: fcstMonth, month
 sampleSize2: 3000000
 where1: AND aoAge >= 0 AND aoDq >= 0 AND aoDq <= 24 AND aoUpb > 10000 AND mon.zb='00'
 where2:  AND trgZb IN ('00', '01', '03', '09') AND fcstMonth > 0

@@ -15,6 +15,8 @@ multiIf(a.term <= 180, 1, a.term >= 360, 0, (360 - a.term) / 180 ) AS rt15Wt,
 rt15Wt * trgMortFix15 + (1-rt15Wt) * trgMortFix30 AS newRate,
 rate - (rt15Wt * orgMortFix15 + (1-rt15Wt) * orgMortFix30) AS spread,
 aoDq + fcstMonth >= 12 ? 'Y' : 'N' AS canBe12,
+toInt32(aoDq + fcstMonth > 12 ? 12 : aoDq + fcstMonth) AS potentialDqMax,
+toInt32(aoDq - fcstMonth < 0 ? 0 : aoDq - fcstMonth) AS potentialDqMin,
 30*(aoDq + fcstMonth) / fcDays < 1.5 ? 30*(aoDq + fcstMonth) / fcDays : 1.5 AS fcTime,
 fcType,
 

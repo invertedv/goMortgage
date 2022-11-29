@@ -1,12 +1,13 @@
+// dropped fcstMonth, stratified on aoAge, trgAge, month
 title: All-In model, Even Sampling
-buildData: no
+buildData: yes
 buildModel: yes
 assessModel: yes
 
 // data build settings
-strats1: aoDt
+strats1: aoDt, aoAge
 sampleSize1: 30000000
-strats2: targetStatus
+strats2: month, trgAge, targetStatus
 sampleSize2: 2000000
 where1: AND aoAge >= 0 AND aoDq >= 0 AND aoDq <= 24 AND aoUpb > 10000 AND mon.zb='00'
 where2:  AND trgZb IN ('00', '01', '03', '09') AND fcstMonth > 0
@@ -18,17 +19,19 @@ econFields: zip3
 // model settings
 target: targetStatus
 targetType: cat
-cat: purpose, propType, occ, amType, standard, nsDoc, nsUw, coBorr, hasSecond, aoPrior30, aoPrior60, aoPrior90p, harp, aoMod, aoBap, channel, covid, fcType
-cts: fico, trgAge, aoAge, term, y20PropVal, units, dti, trgUnempRate, trgEltv, aoMonthsCur, trgPti50, trgRefiIncentive, lbrGrowth, spread, pMod
-emb:  aoDq: 5, state: 4, servMapped: 4, fcstMonth: 2
-addlCat: targetAssist, aoMaxDq12, vintage, aoDqCap6, numBorr
+cat: purpose, propType, occ, amType, standard, nsDoc, nsUw, coBorr, hasSecond, aoPrior30, aoPrior60, aoPrior90p, harp,
+  aoMod, aoBap, channel, covid, fcType, potentialDqMax, potentialDqMin
+cts: fico, term, y20PropVal, units, dti, trgUnempRate, trgEltv, aoMonthsCur, trgPti50, trgRefiIncentive, lbrGrowth,
+  spread, pMod, fcTime
+emb:  aoDq: 5, state: 4, servMapped: 4, trgAge: 2
+addlCat: targetAssist, aoMaxDq12, vintage, aoDqCap6, numBorr, fcstMonth
 addlKeep: lnId, fcstMonth
 layer1: FC(size:40, activation:relu)
 layer2: FC(size:20, activation:relu)
-layer3: FC(size:20, activation:relu)  // was 10
+layer3: FC(size:20, activation:relu)
 layer4: FC(size:15, activation:softmax)
-batchSize: 15000  // was 5000
-epochs: 3000
+batchSize: 15000
+epochs: 10000
 earlyStopping: 40
 learningRateStart: .0003
 learningRateEnd: .0001
@@ -42,7 +45,7 @@ pass1Strat: tmp.stratAllIn1
 pass1Sample: tmp.sampleAllIn1
 pass2Strat: tmp.stratAllIn2
 pass2Sample: tmp.sampleAllIn2
-modelTable: tmp.modelAllIn
+modelTable: tmp.modelAllInMonth
 graphs: graphsEven
 
 // save Assess Data + model output
@@ -71,6 +74,17 @@ assessTargetaoDqDef: 14
 assessSliceraoDqDef: aoDqCap6
 
 // curves
+curvesNametrgAgePp: Target Age, Prepay
+curvesTargettrgAgePp: 13
+curvesSlicertrgAgePp: trgAge
+
+curvesNametrgAgeDef: Target Age, Default
+curvesTargettrgAgeDef: 14
+curvesSlicertrgAgeDef: trgAge
+
+curvesNametrgAgeD120: Target Age, D120+
+curvesTargettrgAgeD120: 4,5,6,7,8,9,10,11,12
+curvesSlicertrgAgeD120: trgAge
 
 curvesNameyrQtrPp: Target Quarter, Prepay
 curvesTargetyrQtrPp: 13
