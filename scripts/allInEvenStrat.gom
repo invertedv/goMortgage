@@ -83,6 +83,18 @@ curvesNameyrQtrCur: Target Quarter, Current
 curvesTargetyrQtrCur: 0
 curvesSliceryrQtrCur: trgYrQtr
 
+curvesNametrgAgePp: Target Age, Prepay
+curvesTargettrgAgePp: 13
+curvesSlicertrgAgePp: trgAge
+
+curvesNametrgAgeDef: Target Age, Default
+curvesTargettrgAgeDef: 14
+curvesSlicertrgAgeDef: trgAge
+
+curvesNametrgAgeD120: Target Age, D120+
+curvesTargettrgAgeD120: 4,5,6,7,8,9,10,11,12
+curvesSlicertrgAgeD120: trgAge
+
 // general
 show: no
 plotHeight: 1200

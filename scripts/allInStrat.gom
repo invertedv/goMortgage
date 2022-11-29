@@ -18,9 +18,11 @@ econFields: zip3
 // model settings
 target: targetStatus
 targetType: cat
-cat: purpose, propType, occ, amType, standard, nsDoc, nsUw, coBorr, hasSecond, aoPrior30, aoPrior60, aoPrior90p, harp, aoMod, aoBap, channel, covid, fcType
-cts: fico, trgAge, aoAge, term, y20PropVal, units, dti, trgUnempRate, trgEltv, aoMonthsCur, trgPti50, trgRefiIncentive, lbrGrowth, spread, pMod
-emb:  aoDq: 5, state: 4, servMapped: 4, fcstMonth: 2
+cat: purpose, propType, occ, amType, standard, nsDoc, nsUw, coBorr, hasSecond, aoPrior30, aoPrior60, aoPrior90p, harp,
+  aoMod, aoBap, channel, covid, fcType, potentialDqMax, potentialDqMin
+cts: fico, term, y20PropVal, units, dti, trgUnempRate, trgEltv, aoMonthsCur, trgPti50, trgRefiIncentive, lbrGrowth,
+  spread, pMod, fcTime
+emb:  aoDq: 5, state: 4, servMapped: 4, trgAge: 2
 addlCat: targetAssist, aoMaxDq12, vintage, aoDqCap6, numBorr
 addlKeep: lnId, fcstMonth
 layer1: FC(size:40, activation:relu)
