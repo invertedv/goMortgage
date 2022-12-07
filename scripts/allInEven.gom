@@ -1,10 +1,10 @@
-// dropped fcstMonth, stratified on aoAge, trgAge, month
-title: All-In model, Even Sampling
+title: All-In model, Even Sampling of Target
+outDir: /home/will/goMortgage/allInEven
 buildData: yes
 buildModel: yes
 assessModel: yes
 
-// data build settings
+// buildData settings
 strats1: aoDt, aoAge
 sampleSize1: 30000000
 strats2: targetStatus
@@ -15,37 +15,37 @@ mtgDb: mtg.fannie
 mtgFields: fannie
 econDb: econGo.final
 econFields: zip3
+pass1Strat: tmp.stratAllIn1
+pass1Sample: tmp.sampleAllIn1
+pass2Strat: tmp.stratAllIn2
+pass2Sample: tmp.sampleAllIn2
+outTable: tmp.modelEven
+tableKey: lnId
 
-// model settings
+// buildModel settings
 target: targetStatus
 targetType: cat
 cat: purpose, propType, occ, amType, standard, nsDoc, nsUw, coBorr, hasSecond, aoPrior30, aoPrior60, aoPrior90p, harp,
   aoMod, aoBap, channel, covid, fcType, potentialDqMax, potentialDqMin
 cts: fico, term, y20PropVal, units, dti, trgUnempRate, trgEltv, aoMonthsCur, trgPti50, trgRefiIncentive, lbrGrowth,
   spread, pMod, fcTime
-emb:  aoDq: 5, state: 4, servMapped: 4, trgAge: 2
+emb: aoDq{5}; state{4}; servMapped{4}; trgAge{2}, fcstMonth{2}
 addlCat: targetAssist, aoMaxDq12, vintage, aoDqCap6, numBorr, fcstMonth
-addlKeep: lnId, fcstMonth
+addlKeep: lnId
 layer1: FC(size:40, activation:relu)
 layer2: FC(size:20, activation:relu)
 layer3: FC(size:20, activation:relu)
 layer4: FC(size:15, activation:softmax)
 batchSize: 15000
-epochs: 10000
+epochs: 2500
 earlyStopping: 40
 learningRateStart: .0003
 learningRateEnd: .0001
-modelQuery: SELECT %s FROM %s WHERE bucket < 10
-validateQuery: SELECT %s FROM %s WHERE bucket in (10,11,12,13,14)
-assessQuery: SELECT %s FROM %s WHERE bucket in (15,16,17,18,19)
+modelQuery: SELECT %s FROM tmp.modelEven WHERE bucket < 10
+validateQuery: SELECT %s FROM tmp.modelEven WHERE bucket in (10,11,12,13,14)
 
-// output locations
-outDir: /home/will/goMortgage/allInEvenIter3
-pass1Strat: tmp.stratAllIn1
-pass1Sample: tmp.sampleAllIn1
-pass2Strat: tmp.stratAllIn2
-pass2Sample: tmp.sampleAllIn2
-modelTable: tmp.modelAllInMonth1
+// assessModel settings
+assessQuery: SELECT %s FROM tmp.modelEven WHERE bucket in (15,16,17,18,19)
 graphs: graphsEven
 
 // save Assess Data + model output

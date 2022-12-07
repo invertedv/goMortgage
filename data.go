@@ -242,6 +242,7 @@ func pass2(specs specsMap, conn *chutils.Connect, log *os.File) error {
 	if where2, ok := specs["where2"]; ok {
 		specs["where"] = where2
 	}
+
 	specs["fields"] = fmt.Sprintf("%s, %s", specs.mtgFields(), specs.pass2Fields())
 	qry := buildQuery(withPass2, specs)
 
@@ -317,10 +318,14 @@ func data(specs specsMap, conn *chutils.Connect, log *os.File) error {
 		return e
 	}
 
+	logger(log, "pass 1 complete", true)
+
 	// pass 2
 	if e := pass2(specs, conn, log); e != nil {
 		return e
 	}
+
+	logger(log, "pass 2 complete", true)
 
 	// pass 3
 	if e := pass3(specs, conn); e != nil {

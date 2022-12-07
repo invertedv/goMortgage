@@ -1,12 +1,13 @@
 title: Modifications Model
+outDir: /home/will/goMortgage/mod
 buildData: yes
 buildModel: yes
 assessModel: yes
 
-// data build settings
+// buildData settings
 strats1: state, aoDt, aoAge, aoDqCap6
 sampleSize1: 30000000
-strats2: fcstMonth, month
+strats2: fcstMonth, trgDt
 sampleSize2: 3000000
 where1: AND aoAge >= 0 AND aoDq >= 0 AND aoDq <= 24 AND aoUpb > 10000 AND mon.zb='00'
 where2:  AND fcstMonth > 0 AND trgZb IN ('00', '01', '03', '09')
@@ -14,17 +15,23 @@ mtgDb: mtg.fannie
 mtgFields: fannie
 econDb: econGo.final
 econFields: zip3
+pass1Strat: tmp.strat1Model
+pass1Sample: tmp.sample1Model
+pass2Strat: tmp.strat2Model
+pass2Sample: tmp.sample2Model
+outTable: tmp.model
+tableKey: lnId
 
-// model settings
+// buildModel settings
 target: targetAssist
 targetType: cat
 cat: purpose, propType, occ, amType, standard, nsDoc, nsUw, coBorr, hasSecond, aoPrior30, aoPrior60, aoPrior90p,
   harp, channel, potentialDqMax, potentialDqMin
 cts: fico, term, trgUpbExp, units, dti, trgUnempRate, trgEltv, aoMonthsCur, trgPti50,
   trgRefiIncentive, lbrGrowth, spread, fcTime
-emb:  aoDq: 5, state: 2, servMapped: 2, fcstMonth: 2, trgAge: 2
+emb:  aoDq{5}; state{2}; servMapped{2}; fcstMonth{2}; trgAge{2}
 addlCats: aoMaxDq12, vintage, aoDqCap6
-addlKeep: lnId, fcstMonth, targetDq, targetDeath
+addlKeep: lnId, targetDq, targetDeath
 layer1: DropOut(.1)
 layer2: FC(size:20, activation:relu)
 layer3: FC(size:2, activation:softmax)
@@ -33,24 +40,18 @@ epochs: 10000
 earlyStopping: 40
 learningRateStart: .0005
 learningRateEnd: .00025
-modelQuery: SELECT %s FROM %s WHERE bucket < 10 AND aoMod='N' AND aoBap in ['N', '7', '9'] AND trgZb = '00'
-validateQuery: SELECT %s FROM %s WHERE bucket in (10,11,12,13,14) AND aoMod='N' AND aoBap in ['N', '7', '9']  AND trgZb = '00'
-assessQuery: SELECT %s FROM %s WHERE bucket in (15,16,17,18,19) AND aoMod='N' AND aoBap in ['N', '7', '9'] AND trgZb = '00'
+modelQuery: SELECT %s FROM tmp.model WHERE bucket < 10 AND aoMod='N' AND aoBap in ['N', '7', '9'] AND trgZb = '00'
+validateQuery: SELECT %s FROM tmp.model WHERE bucket in (10,11,12,13,14) AND aoMod='N' AND aoBap in ['N', '7', '9']  AND trgZb = '00'
 
-// output locations
-outDir: /home/will/goMortgage/mod
-pass1Strat: tmp.strat1Model
-pass1Sample: tmp.sample1Model
-pass2Strat: tmp.strat2Model
-pass2Sample: tmp.sample2Model
-modelTable: tmp.model
+// assessModel settings
+assessQuery: SELECT %s FROM tmp.model WHERE bucket in (15,16,17,18,19) AND aoMod='N' AND aoBap in ['N', '7', '9'] AND trgZb = '00'
 
 // save Assess Data + model output
 saveTable: tmp.outMod
-saveTableTargets: pMod{ 1}
+saveTableTargets: pMod{1}
 
 // assessment
-assessAddl: fcstMonth, aoIncome50, aoEItb50, pPen, newPti90, newPti50, newPti10, trgPti10, trgPti90, ltv, aoMaxDq12,
+assessAddl: aoIncome50, aoEItb50, pPen, newPti90, newPti50, newPti10, trgPti10, trgPti90, ltv, aoMaxDq12,
   trgPti50, newPti50, expPti50, aoUpb, state, aoIncome90, msaLoc
 
 assessNameperiods: pModified

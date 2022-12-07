@@ -1,30 +1,15 @@
-title: All-In model
+title: All-In model, De-Biased From Even Sampling of Target
+outDir: /home/will/goMortgage/allInEvenIter3
 biasCorrect: yes
 assessModel: yes
-
-// data settings
-strats1: state, aoDt, aoAge, aoDqCap6
-sampleSize1: 30000000
-strats2: fcstMonth, month
-sampleSize2: 3000000
-where1: AND aoAge >= 0 AND aoDq >= 0 AND aoDq <= 24 AND aoUpb > 10000 AND mon.zb='00'
-where2:  AND trgZb IN ('00', '01', '03', '09') AND fcstMonth > 0
-mtgDb: mtg.fannie
-mtgFields: fannie
-econDb: econGo.final
-econFields: zip3
-target: targetStatus
-targetType: cat
 
 // model settings
 target: targetStatus
 targetType: cat
-modelQuery: WITH d AS (SELECT %s FROM %s WHERE bucket < 10 LIMIT 2000000) SELECT * FROM d WHERE 1=1
-assessQuery: SELECT %s FROM %s WHERE bucket in (15,16,17,18,19)
+biasQuery: SELECT %s FROM tmp.model WHERE bucket < 10
+assessQuery: SELECT %s FROM tmp.model WHERE bucket in (15,16,17,18,19)
 
 // output locations
-outDir: /home/will/goMortgage/allInEvenIter3
-modelTable: tmp.model
 biasDir: modelBias
 graphs: graphsStrat
 
