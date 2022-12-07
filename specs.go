@@ -26,12 +26,29 @@ type specsMap map[string]string
 
 // learnRate returns the starting and ending learning rate
 func (sf specsMap) learnRate() (start, end float64, err error) {
-	start, err = strconv.ParseFloat(strings.ReplaceAll(sf["learningRateStart"], " ", ""), bits64)
+	if lrStr, ok := sf["learningRate"]; ok {
+		var lr float64
+		lr, err = strconv.ParseFloat(strings.ReplaceAll(lrStr, " ", ""), bits64)
+		return lr, lr, err
+	}
+
+	var lrSStr, lrEStr string
+	var ok bool
+
+	if lrSStr, ok = sf["learningRateStart"]; !ok {
+		return start, end, fmt.Errorf("missing learningRateStart")
+	}
+
+	if lrEStr, ok = sf["learningRateEnd"]; !ok {
+		return start, end, fmt.Errorf("missing learningRateEnd")
+	}
+
+	start, err = strconv.ParseFloat(strings.ReplaceAll(lrSStr, " ", ""), bits64)
 	if err != nil {
 		return
 	}
 
-	end, err = strconv.ParseFloat(strings.ReplaceAll(sf["learningRateEnd"], " ", ""), bits64)
+	end, err = strconv.ParseFloat(strings.ReplaceAll(lrEStr, " ", ""), bits64)
 
 	return
 }
@@ -40,7 +57,12 @@ func (sf specsMap) learnRate() (start, end float64, err error) {
 func (sf specsMap) getQuery(table string) string {
 	flds := strings.Join(sf.queryFields(), ",")
 	key := fmt.Sprintf("%sQuery", table)
-	return fmt.Sprintf(sf[key], flds, sf["modelTable"]) + " " // add trailing blank
+
+	if qry, ok := sf[key]; ok {
+		return fmt.Sprintf(qry, flds) + " " // add trailing blank
+	}
+
+	return ""
 }
 
 // biasDir returns the directory for the bias-corrected model
@@ -89,9 +111,14 @@ func (sf specsMap) l2() (float64, error) {
 	if !ok {
 		return 0.0, nil
 	}
+
 	l2, err := strconv.ParseFloat(strings.ReplaceAll(l2Str, " ", ""), bits64)
 	if err != nil {
 		return 0.0, err
+	}
+
+	if l2 <= 0.0 {
+		return 0.0, fmt.Errorf("l2Reg must be positive")
 	}
 	return l2, nil
 }
@@ -183,8 +210,13 @@ func (sf specsMap) epochs() (int, error) {
 
 // earlyStopping returns # of epochs with no improvement to trigger early stopping
 func (sf specsMap) earlyStopping() (int, error) {
-	eStop, e := strconv.ParseInt(strings.ReplaceAll(sf["earlyStopping"], " ", ""), base10, bits32)
-	return int(eStop), e
+
+	if eStopStr, ok := sf["earlyStopping"]; ok {
+		eStop, e := strconv.ParseInt(strings.ReplaceAll(eStopStr, " ", ""), base10, bits32)
+		return int(eStop), e
+	}
+
+	return 0, fmt.Errorf("missing earlyStopping key")
 }
 
 func (sf specsMap) startFrom() string {
@@ -349,6 +381,19 @@ func (sf specsMap) inputModels() error {
 	return nil
 }
 
+// return outTable - name of ClickHouse table buildData is to create
+func (sf specsMap) outTable() string {
+	return sf["outTable"]
+}
+
+// returns optional primary key for outTable
+func (sf specsMap) tableKey() string {
+	if key, ok := sf["tableKey"]; ok {
+		return key
+	}
+	return ""
+}
+
 // check checks that required keys are available in sf
 func (sf specsMap) check() error {
 	const (
@@ -356,16 +401,15 @@ func (sf specsMap) check() error {
 		required = "outDir"
 
 		requiredData = `
-          sampleSize1, strats1, sampleSize2, strats2, where1, where2, mtgDb, econDb, pass1Strat, pass1Sample,
-          pass2Strat, pass2Sample, mtgFields, econFields, target, targetType`
+          sampleSize1, strats1, sampleSize2, strats2, mtgDb, econDb, pass1Strat, pass1Sample,
+          pass2Strat, pass2Sample, mtgFields, econFields, target, targetType, outTable`
 
 		requiredModel = `
-          layer1, batchSize, epochs, earlyStopping, targetType, learningRateStart, learningRateEnd, modelQuery, 
-          validateQuery, target, targetType`
+          layer1, batchSize, epochs, targetType, modelQuery, target, targetType`
 
 		requiredAssess = "assessQuery"
 
-		requiredBias = "modelQuery, biasDir"
+		requiredBias = "biasQuery, biasDir"
 	)
 
 	// check for mandatory keys
@@ -526,18 +570,19 @@ func (sf specsMap) embFeatures(complete bool) (parsed []string, err error) {
 		return nil, nil
 	}
 
-	for _, emb := range toSlice(sf["emb"], ",") {
-		fact := strings.Split(emb, ":")
+	for _, emb := range toSlice(sf["emb"], ";") {
+		fact := strings.Split(emb, "{")
 		if len(fact) != 2 {
 			return nil, fmt.Errorf("invalid embedding format: %s", emb)
 		}
 		switch complete {
 		case true:
-			_, e := strconv.ParseInt(strings.ReplaceAll(fact[1], " ", ""), base10, bits32)
+			val := strings.ReplaceAll(strings.ReplaceAll(fact[1], " ", ""), "}", "")
+			_, e := strconv.ParseInt(val, base10, bits32)
 			if e != nil {
 				return nil, fmt.Errorf("invalid dimension in embedding format: %s", emb)
 			}
-			parsed = append(parsed, fmt.Sprintf("E(%s,%s)", fact[0]+"Oh", fact[1]))
+			parsed = append(parsed, fmt.Sprintf("E(%s,%s)", fact[0]+"Oh", val))
 		case false:
 			parsed = append(parsed, fact[0])
 		}

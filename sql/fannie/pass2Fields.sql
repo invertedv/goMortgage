@@ -1,5 +1,5 @@
 // these are fields from pass1 that carry over to the sample2 table
-dateDiff('month',s.aoDt,mon.month) AS fcstMonth,
+dateDiff('month', s.aoDt, trgDt) AS fcstMonth,
 s.msaLoc,
 s.aoDt,
 s.aoAge,
@@ -32,9 +32,9 @@ s.aoUpb * pow(1.0 + s.aoR, fcstMonth) - s.aoPayment * (pow(1.0 + s.aoR, fcstMont
 
 trgRate > 0 ? trgR * trgUpbExp / (1.0 - pow(1.0 + trgR, (-trgRemTerm))) : aoR * trgUpbExp / (1.0 - pow(1.0 + s.aoR, (-trgRemTerm)))  AS trgPayment,
 
-concat(toString(year(month)), 'Q', toString(quarter(month))) AS trgYrQtr,
-year(month)>=2019 ? toString(year(month)) : 'Before 2019' AS periods,
-dateDiff(month, toDate('2020-04-01'),month) >= 0 AND dateDiff(month, toDate('2022-04-01'),month) <= 0 ? 'Y' : 'N' AS covid,
+concat(toString(year(trgDt)), 'Q', toString(quarter(trgDt))) AS trgYrQtr,
+year(trgDt)>=2019 ? toString(year(trgDt)) : 'Before 2019' AS periods,
+dateDiff('month', toDate('2020-04-01'),trgDt) >= 0 AND dateDiff('month', toDate('2022-04-01'),trgDt) <= 0 ? 'Y' : 'N' AS covid,
 trgZb = '03' ? 'Y' : 'N' AS shortSale,
 
 toInt32(trgMod=='Y' ? 1 : 0) AS targetMod,

@@ -54,7 +54,7 @@ lns.negAm,
 lns.bucket,
 lns.rate,
 
-mon.month AS month,
+mon.month AS trgDt,
 mon.upb AS trgUpbAct,
 mon.dq AS trgDq,
 mon.curRate AS trgRate,

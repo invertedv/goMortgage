@@ -44,9 +44,9 @@ func getOutLayer(modSpec sea.ModSpec) (outLayer *sea.FCLayer, outLayLoc int) {
 
 // biasCorrect corrects the bias in a NNModel.  This might be caused by stratifying on the response.
 // biasCorrect works by changing the bias vector on the output nodes so that the fitted model hits -- on average --
-// the values of the modelQuery.
+// the values of the biasQuery.
 // The process is:
-//  1. Run the model on the modelQuery data.
+//  1. Run the model on the biasQuery data.
 //  2. Calculate the values l(i,j) = log(p(i,j)/p(i,m-1)), i=0..n-1, j=0,..,m-2
 //     where p(i,j) is the probability of class j for the ith observation and the model has m classes.
 //     These values are linear in the parameters of the output layer.
@@ -57,7 +57,7 @@ func getOutLayer(modSpec sea.ModSpec) (outLayer *sea.FCLayer, outLayLoc int) {
 //  4. Let pAvg*(k) = avg(p*(i,i))
 //  5. Let SSE = sum((pAvg*(k) - O(k))**2,
 //     where
-//     O(k) is the average of the number of rows in modelQuery that have class k for the target value.
+//     O(k) is the average of the number of rows in biasQuery that have class k for the target value.
 //  6. Select (b(1),..,b(m-2)) to minimize SSE.
 func biasCorrect(specs specsMap, conn *chutils.Connect, log *os.File) error {
 	var (
@@ -76,7 +76,7 @@ func biasCorrect(specs specsMap, conn *chutils.Connect, log *os.File) error {
 		return e
 	}
 
-	if modelPipe, e = newPipe(specs.getQuery("model"), "model data", specs, 0, fts, conn); e != nil {
+	if modelPipe, e = newPipe(specs.getQuery("bias"), "model data", specs, 0, fts, conn); e != nil {
 		return e
 	}
 

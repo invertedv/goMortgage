@@ -98,11 +98,6 @@ func model(specs specsMap, conn *chutils.Connect, log *os.File) error {
 		return e
 	}
 
-	earlyStopping, e := specs.earlyStopping()
-	if e != nil {
-		return e
-	}
-
 	// get FTypes if startFrom: key is used, o.w. this is nil
 	startFts, e := getFts(specs)
 	if e != nil {
@@ -125,13 +120,6 @@ func model(specs specsMap, conn *chutils.Connect, log *os.File) error {
 		return er
 	}
 
-	// validation pipeline
-	if valPipe, e = newPipe(specs.getQuery("validate"), "Validation data", specs, 0, fts, conn); e != nil {
-		return e
-	}
-
-	logger(log, fmt.Sprintf("\n\n%v", valPipe), false)
-
 	// load model
 	nnModel, e := getModel(specs, modelPipe)
 	if e != nil {
@@ -147,9 +135,23 @@ func model(specs specsMap, conn *chutils.Connect, log *os.File) error {
 
 	// model fit struct
 	fit := sea.NewFit(nnModel, epochs, modelPipe,
-		sea.WithValidation(valPipe, earlyStopping),
 		sea.WithLearnRate(startLR, endLR),
 		sea.WithOutFile(specs.modelRoot()))
+
+	// validation pipeline
+	if valQry := specs.getQuery("validate"); valQry != "" {
+		if valPipe, e = newPipe(specs.getQuery("validate"), "Validation data", specs, 0, fts, conn); e != nil {
+			return e
+		}
+		logger(log, fmt.Sprintf("\n\n%v", valPipe), false)
+
+		earlyStopping, ex := specs.earlyStopping()
+		if ex != nil {
+			return ex
+		}
+
+		sea.WithValidation(valPipe, earlyStopping)(fit)
+	}
 
 	// see if there is L2 regularization
 	l2, e := specs.l2()

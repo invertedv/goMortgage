@@ -18,7 +18,7 @@ d AS (
   JOIN
     e AS b
   ON
-    a.month = b.month
+    a.trgDt = b.month
     AND a.<econFields> = b.<econFields>
   JOIN
     e AS c

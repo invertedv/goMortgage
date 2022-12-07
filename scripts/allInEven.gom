@@ -7,7 +7,7 @@ assessModel: yes
 // data build settings
 strats1: aoDt, aoAge
 sampleSize1: 30000000
-strats2: month, trgAge, targetStatus
+strats2: targetStatus
 sampleSize2: 2000000
 where1: AND aoAge >= 0 AND aoDq >= 0 AND aoDq <= 24 AND aoUpb > 10000 AND mon.zb='00'
 where2:  AND trgZb IN ('00', '01', '03', '09') AND fcstMonth > 0
@@ -40,16 +40,16 @@ validateQuery: SELECT %s FROM %s WHERE bucket in (10,11,12,13,14)
 assessQuery: SELECT %s FROM %s WHERE bucket in (15,16,17,18,19)
 
 // output locations
-outDir: /home/will/goMortgage/allInEvenIter2
+outDir: /home/will/goMortgage/allInEvenIter3
 pass1Strat: tmp.stratAllIn1
 pass1Sample: tmp.sampleAllIn1
 pass2Strat: tmp.stratAllIn2
 pass2Sample: tmp.sampleAllIn2
-modelTable: tmp.modelAllInMonth
+modelTable: tmp.modelAllInMonth1
 graphs: graphsEven
 
 // save Assess Data + model output
-saveTable: tmp.outAllInIter2
+saveTable: tmp.outAllInIter3
 saveTableTargets: d120{4,5,6,7,8,9,10,11,12}; d30{1}; current{0}; prepay{13}; default{14}
 
 // existing models that are inputs

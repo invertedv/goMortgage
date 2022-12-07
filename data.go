@@ -242,7 +242,7 @@ func pass2(specs specsMap, conn *chutils.Connect, log *os.File) error {
 	if where2, ok := specs["where2"]; ok {
 		specs["where"] = where2
 	}
-	specs["fields"] = fmt.Sprintf("%s, %s", specs.pass2Fields(), specs.mtgFields())
+	specs["fields"] = fmt.Sprintf("%s, %s", specs.mtgFields(), specs.pass2Fields())
 	qry := buildQuery(withPass2, specs)
 
 	sampleSize, e := strconv.ParseInt(specs["sampleSize2"], base10, bits32)
@@ -290,13 +290,13 @@ func pass3(specs specsMap, conn *chutils.Connect) error {
 	specs["fields"] = econFields + "," + specs.pass3Fields()
 	qry := buildQuery(withPass3, specs)
 	rdr := s.NewReader(qry, conn)
-	rdr.Name = specs["modelTable"]
+	rdr.Name = specs.outTable()
 
-	if e := rdr.Init("lnId", chutils.MergeTree); e != nil {
+	if e := rdr.Init(specs.tableKey(), chutils.MergeTree); e != nil {
 		return e
 	}
 
-	if e := rdr.TableSpec().Create(conn, specs["modelTable"]); e != nil {
+	if e := rdr.TableSpec().Create(conn, specs.outTable()); e != nil {
 		return e
 	}
 
