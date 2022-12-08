@@ -1,6 +1,6 @@
 title: All-In model, Even Sampling of Target
 outDir: /home/will/goMortgage/allInEven
-buildData: yes
+buildData: no
 buildModel: yes
 assessModel: yes
 
@@ -29,7 +29,7 @@ cat: purpose, propType, occ, amType, standard, nsDoc, nsUw, coBorr, hasSecond, a
   aoMod, aoBap, channel, covid, fcType, potentialDqMax, potentialDqMin
 cts: fico, term, y20PropVal, units, dti, trgUnempRate, trgEltv, aoMonthsCur, trgPti50, trgRefiIncentive, lbrGrowth,
   spread, pMod, fcTime
-emb: aoDq{5}; state{4}; servMapped{4}; trgAge{2}, fcstMonth{2}
+emb: aoDq{5}; state{4}; servMapped{4}; trgAge{2}; fcstMonth{2}
 addlCat: targetAssist, aoMaxDq12, vintage, aoDqCap6, numBorr, fcstMonth
 addlKeep: lnId
 layer1: FC(size:40, activation:relu)

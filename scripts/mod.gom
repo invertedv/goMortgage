@@ -1,6 +1,6 @@
 title: Modifications Model
 outDir: /home/will/goMortgage/mod
-buildData: yes
+buildData: no
 buildModel: yes
 assessModel: yes
 
