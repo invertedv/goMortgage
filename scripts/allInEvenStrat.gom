@@ -1,5 +1,5 @@
 title: All-In model, De-Biased From Even Sampling of Target
-outDir: /home/will/goMortgage/allInEvenIter3
+outDir: /home/will/goMortgage/allInEven
 biasCorrect: yes
 assessModel: yes
 
