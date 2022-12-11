@@ -1,7 +1,7 @@
 title: DQ model
 outDir: /home/will/goMortgage/dq
-buildData: yes
-buildModel: yes
+buildData: no
+buildModel: no
 assessModel: yes
 
 // ************* buildData keys *************
@@ -51,7 +51,7 @@ targetType: cat
 
 // one-hot features.  Note, it's fine for this to take up multple lines
 cat: purpose, propType, occ, amType, standard, nsDoc, nsUw, coBorr, hasSecond, aoPrior30, aoPrior60,
-  aoPrior90p, harp, aoMod, aoBap, channel, covid, fcType, pPen36
+  aoPrior90p, harp, aoMod, aoBap, channel, covid, fcType, potentialDqMax, potentialDqMin
 
 // Continuous features.  Note, these will automatically be normalized.
 cts: fico, aoAge, term, y20PropVal, units, dti, trgUnempRate, trgEltv, aoMonthsCur, trgPti50,
@@ -95,7 +95,7 @@ saveTable: tmp.outDq
 saveTableTargets: d120p{4,5,6,7,8,9,10,11,12}; d90{3}; d60{2}; d30{1}; current{0}
 
 // Features not in the model we wish to keep and treat as categorical.  These can be used in the assessment.
-addlCats: targetAssist, aoMaxDq12, vintage, aoDqCap6, numBorr
+addlCat: targetAssist, aoMaxDq12, vintage, aoDqCap6, numBorr
 
 // Features to keep, either for assessment or to add to the output table.
 addlKeep: lnId, aoDt, trgDt
@@ -112,9 +112,9 @@ assessTargetaoDq: 4,5,6,7,8,9,10,11,12
 assessSliceraoDq: aoDqCap6
 
 // Run another assessment that is sliced by occupancy.
-assessNameOcc: DQ 4+ Months
-assessTargetOcc: 4,5,6,7,8,9,10,11,12
-assessSlicerOcc: occ
+//assessNameOcc: DQ 4+ Months
+//assessTargetOcc: 4,5,6,7,8,9,10,11,12
+//assessSlicerOcc: occ
 
 // Run a by-curve assessment where the metric on the binary output that coalesces into two groups:
 // 0-3 months DQ and 4+ months DQ. The graph will be two curves: model and average rate of 4+ months DQ
@@ -131,6 +131,10 @@ curvesSlicervintageD120: vintage
 curvesNamefmD120: Forecast Month, DQ 4+ Months
 curvesTargetfmD120: 4,5,6,7,8,9,10,11,12
 curvesSlicerfmD120: fcstMonth
+
+curvesNametrgAgeD120: Forecast Month, DQ 4+ Months
+curvesTargettrgAgeD120: 4,5,6,7,8,9,10,11,12
+curvesSlicertrgAgeD120: trgAge
 
 curvesNameyrQtrD30: Target Quarter, DQ 1 Month
 curvesTargetyrQtrD30: 1

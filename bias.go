@@ -178,7 +178,7 @@ func buildObj(pipe sea.Pipeline, nnModel *sea.NNModel, log *os.File) (objFn, []f
 	// get fit probabilities
 	probs := nnModel.FitSlice()
 
-	nCol := nnModel.Cols()
+	nCol := nnModel.OutputCols()
 	if nCol == 1 {
 		return nil, nil, fmt.Errorf("bias only for categorical models")
 	}
@@ -255,7 +255,7 @@ func buildObj(pipe sea.Pipeline, nnModel *sea.NNModel, log *os.File) (objFn, []f
 	}
 
 	// starting values
-	var bAdj = make([]float64, nnModel.Cols()-1)
+	var bAdj = make([]float64, nnModel.OutputCols()-1)
 	for ind := 0; ind < len(bAdj); ind++ {
 		targ := math.Log(trgRates[ind] / trgRates[nCol-1])
 		bAdj[ind] = targ - avgLogs[ind]/float64(nRow)

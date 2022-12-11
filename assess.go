@@ -45,12 +45,16 @@ func assessModel(specs specsMap, conn *chutils.Connect, log *os.File) error {
 
 	// Marginal and KS/Decile/SegPlot plots
 	for _, slice := range specs.slicer("assess") {
-		sl := slice // bad to pass for var as a pointer
-
+		sl := slice                                  // bad to pass for var as a pointer
 		baseFt := assessPipe.GetFType(slice.feature) // this may not be in fts
+		if baseFt.Role == sea.FRCts {
+			return fmt.Errorf("cannot slice on continuous feature: %s", slice.feature)
+		}
+
 		if e := marginal(specs, &sl, baseFt, obsFt, fts, conn); e != nil {
 			return e
 		}
+
 		if e := assess(assessPipe, specs, obsFt, &sl, log); e != nil {
 			return e
 		}
@@ -281,6 +285,7 @@ func assess(pipe sea.Pipeline, specs specsMap, obsFt *sea.FType, segSpec *slices
 	}
 
 	xy, e := sea.NewXY(fit, obs)
+
 	if e != nil {
 		return e
 	}
@@ -333,8 +338,8 @@ func assess(pipe sea.Pipeline, specs specsMap, obsFt *sea.FType, segSpec *slices
 		y := segPipe.Get("obs")
 
 		// ranges for graphs
-		minVal := math.Min(x.Summary.DistrC.Q[2], y.Summary.DistrC.Q[2])
-		maxVal := math.Max(x.Summary.DistrC.Q[len(x.Summary.DistrC.Q)-3], y.Summary.DistrC.Q[len(y.Summary.DistrC.Q)-3])
+		minVal := math.Min(x.Summary.DistrC.Q[1], y.Summary.DistrC.Q[1])
+		maxVal := math.Max(x.Summary.DistrC.Q[len(x.Summary.DistrC.Q)-2], y.Summary.DistrC.Q[len(y.Summary.DistrC.Q)-2])
 
 		// structure needed for KS and Decile plots
 		xy, e = sea.NewXY(x.Data.([]float64), y.Data.([]float64))
@@ -393,3 +398,5 @@ func assess(pipe sea.Pipeline, specs specsMap, obsFt *sea.FType, segSpec *slices
 // TODO: figure out why fcstMonth has to be a cat for curves to work
 
 // TODO: think about fcstMonth curve for mods...is there a reason it misses?
+
+// TODO: look for unknown keys

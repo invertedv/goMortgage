@@ -1,7 +1,7 @@
 title: All-In model, Even Sampling of Target
 outDir: /home/will/goMortgage/allInEven
 buildData: no
-buildModel: yes
+buildModel: no
 assessModel: yes
 
 // buildData settings
@@ -46,11 +46,11 @@ validateQuery: SELECT %s FROM tmp.modelEven WHERE bucket in (10,11,12,13,14)
 
 // assessModel settings
 assessQuery: SELECT %s FROM tmp.modelEven WHERE bucket in (15,16,17,18,19)
-graphs: graphsEven
+graphs: graphsEven1
 
 // save Assess Data + model output
-saveTable: tmp.outAllInIter3
-saveTableTargets: d120{4,5,6,7,8,9,10,11,12}; d30{1}; current{0}; prepay{13}; default{14}
+//saveTable: tmp.outAllInIter3
+//saveTableTargets: d120{4,5,6,7,8,9,10,11,12}; d30{1}; current{0}; prepay{13}; default{14}
 
 // existing models that are inputs
 inputModel: Mod
