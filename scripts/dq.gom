@@ -1,6 +1,6 @@
 title: DQ model
 outDir: /home/will/goMortgage/dq
-buildData: yes
+buildData: no
 buildModel: yes
 assessModel: yes
 
@@ -51,7 +51,7 @@ targetType: cat
 
 // one-hot features.  Note, it's fine for this to take up multple lines
 cat: purpose, propType, occ, amType, standard, nsDoc, nsUw, coBorr, hasSecond, aoPrior30, aoPrior60,
-  aoPrior90p, harp, aoMod, aoBap, channel, covid, fcType, potentialDqMax, potentialDqMin
+  aoPrior90p, harp, aoMod, aoBap, channel, covid, trgFcType, potentialDqMax, potentialDqMin
 
 // Continuous features.  Note, these will automatically be normalized.
 cts: fico, aoAge, term, y20PropVal, units, dti, trgUnempRate, trgEltv,
@@ -75,17 +75,17 @@ learningRateEnd: .0001
 
 // This query pulls the data for fitting the coefficients.  The %s will be replaced with the fields we need.
 // The bucket field is a hash of the loan number.
-modelQuery: SELECT %s FROM tmp.DqModel WHERE bucket < 10
+modelQuery: SELECT %s FROM tmp.modelDq WHERE bucket < 10
 
 // This query pulls the data for determining early stopping.
-validateQuery: SELECT %s FROM tmp.DqModel WHERE bucket in (10,11,12,13,14)
+validateQuery: SELECT %s FROM tmp.modelDq WHERE bucket in (10,11,12,13,14)
 
 
 
 // ************* assessModel keys *************
 
 // This query pulls the data for the assessments.
-assessQuery: SELECT %s FROM tmp.DqModel WHERE bucket in (15,16,17,18,19)
+assessQuery: SELECT %s FROM tmp.modelDq WHERE bucket in (15,16,17,18,19)
 
 // save Assess Data + model output.
 // The table will consist of all the fields used during the run plus any set of model outputs you specify.
