@@ -14,13 +14,9 @@ WITH e AS (
     max(q50) AS income50,
     max(q75) AS income75,
     max(q90) AS income90,
-    max(msaName) = '' ? max(state) : max(msaName) AS msaNameLoc
+    max(msaName) = '' ? max(state) : max(msaName) AS msaNameLoc,
+    max(fcDays) AS fcDays,
+    max(fcType) AS fcType
 FROM
     econGo.final
-GROUP BY zip3, month),
-f AS (
-    SELECT * FROM unified.serv_map
-),
-x AS (
-    SELECT * FROM aux.fctimes
-)
+GROUP BY zip3, month)

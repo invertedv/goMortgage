@@ -1,7 +1,7 @@
 title: DQ model
 outDir: /home/will/goMortgage/dq
-buildData: no
-buildModel: no
+buildData: yes
+buildModel: yes
 assessModel: yes
 
 // ************* buildData keys *************
@@ -38,13 +38,13 @@ pass1Sample: tmp.sampleDq1
 pass2Strat: tmp.stratDq2
 pass2Sample: tmp.sampleDq2
 // final table
-outTable: tmp.DqModel
+outTable: tmp.modelDq
 // key for final table
 tableKey: lnId
 
 // ************* buildModel keys *************
 
-// targetDq is an int32 field that takes on values 0,..,13.
+// targetDq is an int32 field that takes on values 0,..,13 (current, 1-11 months DQ, 12+ months DQ).
 target: targetDq
 // We treat targetDq as categorical - which will build a model with a softmax output layer
 targetType: cat
@@ -54,11 +54,11 @@ cat: purpose, propType, occ, amType, standard, nsDoc, nsUw, coBorr, hasSecond, a
   aoPrior90p, harp, aoMod, aoBap, channel, covid, fcType, potentialDqMax, potentialDqMin
 
 // Continuous features.  Note, these will automatically be normalized.
-cts: fico, aoAge, term, y20PropVal, units, dti, trgUnempRate, trgEltv, aoMonthsCur, trgPti50,
+cts: fico, aoAge, term, y20PropVal, units, dti, trgUnempRate, trgEltv,
   trgRefiIncentive, lbrGrowth, spread
 
 // Embedded features.  The embedding dimension is in the braces.
-emb:  aoDq{5}; state {4}; servMapped{4}; fcstMonth{2}; trgAge{2}
+emb:  aoDq{5}; state {4}; fcstMonth{2}; trgAge{2}
 
 // this is the model we're fitting.
 layer1: FC(size:40, activation:relu)
@@ -112,9 +112,9 @@ assessTargetaoDq: 4,5,6,7,8,9,10,11,12
 assessSliceraoDq: aoDqCap6
 
 // Run another assessment that is sliced by occupancy.
-//assessNameOcc: DQ 4+ Months
-//assessTargetOcc: 4,5,6,7,8,9,10,11,12
-//assessSlicerOcc: occ
+assessNameOcc: DQ 4+ Months
+assessTargetOcc: 4,5,6,7,8,9,10,11,12
+assessSlicerOcc: occ
 
 // Run a by-curve assessment where the metric on the binary output that coalesces into two groups:
 // 0-3 months DQ and 4+ months DQ. The graph will be two curves: model and average rate of 4+ months DQ

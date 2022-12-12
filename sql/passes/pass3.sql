@@ -8,10 +8,6 @@ d AS (
   SELECT
     a.*,
     b.msaNameLoc AS msaLocName,
-    f.pp_group = '' ? 'group3' : f.pp_group AS ppGroup,
-    f.serv_mapped = '' ? 'other' : f.serv_mapped AS servMapped,
-    x.fc_type AS fcType,
-    x.fc_days AS fcDays,
     <fields>
   FROM
     <pass2Sample> AS a
@@ -34,9 +30,4 @@ d AS (
     (SELECT * FROM e WHERE e.month = toDate('2020-01-01')) AS x2020
   ON
     a.<econFields> = x2020.<econFields>
-  LEFT JOIN f ON
-    a.servicer=f.serv_name
-// TODO: put this in econ table
-  JOIN x on
-    a.state = x.prop_st
 )
