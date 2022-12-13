@@ -24,8 +24,11 @@ var (
 	//go:embed sql/passes/pass3.sql
 	withPass3 string
 
-	//go:embed sql/fannie/mtgFields.sql
-	fannieMtgFields string
+	//go:embed sql/fannie/mtgFieldsStatic.sql
+	fannieMtgFieldsStat string
+
+	//go:embed sql/fannie/mtgFieldsMonthly.sql
+	fannieMtgFieldsMon string
 
 	//go:embed sql/fannie/goodloan.sql
 	fannieGoodLoan string
@@ -35,6 +38,9 @@ var (
 
 	//go:embed sql/fannie/pass2Fields.sql
 	fanniePass2Fields string
+
+	//go:embed sql/fannie/pass2FieldsWindow.sql
+	fanniePass2FieldsWindow string
 
 	//go:embed sql/fannie/pass3Fields.sql
 	fanniePass3Calcs string
@@ -171,10 +177,14 @@ func inits(host, user, pw, specsFile string, maxMemory, maxGroupBy int64) (specs
 // it is replaced with the value map[key].
 func buildQuery(baseWith string, replacers map[string]string) string {
 	qry := baseWith
-	for k, v := range replacers {
-		krep := fmt.Sprintf("<%s>", k)
-		// add whitespace around v
-		qry = strings.ReplaceAll(qry, krep, fmt.Sprintf(" %s ", v))
+
+	// go through this twice since some of the strings substituted in may also have "<xyz>" replacers
+	for ind := 0; ind < 2; ind++ {
+		for k, v := range replacers {
+			krep := fmt.Sprintf("<%s>", k)
+			// add whitespace around v
+			qry = strings.ReplaceAll(qry, krep, fmt.Sprintf(" %s ", v))
+		}
 	}
 
 	return fmt.Sprintf("%s SELECT * FROM d", qry)

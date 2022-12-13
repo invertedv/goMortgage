@@ -208,9 +208,26 @@ func (sf specsMap) epochs() (int, error) {
 	return int(epochs), e
 }
 
+func (sf specsMap) window() (int, error) {
+	var window int64
+	var e error
+	if windS, ok := sf["window"]; ok {
+		if window, e = strconv.ParseInt(windS, 10, 32); e != nil {
+			return 0, e
+		}
+
+		if window <= 0 || window > 60 {
+			return 0, fmt.Errorf("illegal window value %s", windS)
+		}
+
+		return int(window), nil
+	}
+
+	return 0, nil
+}
+
 // earlyStopping returns # of epochs with no improvement to trigger early stopping
 func (sf specsMap) earlyStopping() (int, error) {
-
 	if eStopStr, ok := sf["earlyStopping"]; ok {
 		eStop, e := strconv.ParseInt(strings.ReplaceAll(eStopStr, " ", ""), base10, bits32)
 		return int(eStop), e
@@ -431,6 +448,11 @@ func (sf specsMap) check() error {
 	reqs := make([]string, 0)
 	if sf.buildData() {
 		reqs = append(reqs, requiredData)
+
+		// check if window value is valid, if present
+		if _, e := sf.window(); e != nil {
+			return e
+		}
 	}
 
 	if sf.buildModel() {
@@ -989,9 +1011,13 @@ func readSpecsMap(specFile string) (specsMap, error) {
 
 // mtgFields returns the Pass3 goMortgage fields from the data source specified in the specs field <mtgFields>
 func (sf specsMap) mtgFields() string {
+
 	switch sf["mtgFields"] {
 	case fannie:
-		return fannieMtgFields
+		if w, _ := sf.window(); w > 0 {
+			return fannieMtgFieldsStat
+		}
+		return fmt.Sprintf("%s, %s", fannieMtgFieldsStat, fannieMtgFieldsMon)
 	default:
 		return ""
 	}
@@ -1017,11 +1043,46 @@ func (sf specsMap) pass1Fields() string {
 	}
 }
 
+func (sf specsMap) getWhere(pass int) {
+	sf["where"] = ""
+
+	wh := fmt.Sprintf("where%d", pass)
+	if where, ok := sf[wh]; ok {
+		where = strings.TrimLeft(where, " ")
+		if len(where) >= 3 {
+			if strings.ToUpper(where)[0:3] == "AND" {
+				sf["where"] = " " + where
+				return
+			}
+		}
+
+		sf["where"] = fmt.Sprintf(" AND %s", where)
+	}
+
+	return
+}
+
+func (sf specsMap) windowExtras() {
+
+	// not a window data pull, so we need to array join on monthly
+	if win, _ := sf.window(); win == 0 {
+		sf["arrayJoin"] = " ARRAY JOIN monthly AS mon"
+		return
+	}
+
+	sf["arrayJoin"] = ""
+	return
+}
+
 // pass2Fields returns the Pass2 fields for the data source.
 func (sf specsMap) pass2Fields() string {
 	switch sf["mtgFields"] {
 	case fannie:
-		return fanniePass2Fields
+		if window, _ := sf.window(); window == 0 {
+			return fanniePass2Fields
+		} else {
+			return fanniePass2FieldsWindow
+		}
 	default:
 		return ""
 	}

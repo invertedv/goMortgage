@@ -7,7 +7,7 @@ WITH d AS (
     SELECT
    <fields>
 FROM
-   <mtgDb> AS lns ARRAY JOIN monthly AS mon
+   <mtgDb> AS lns <arrayJoin>
 JOIN
    <pass1Sample> AS s
 ON

@@ -5,7 +5,7 @@ buildModel: no
 assessModel: yes
 
 // buildData settings
-strats1: aoDt, aoAge
+strats1: noGroups
 sampleSize1: 30000000
 strats2: targetStatus
 sampleSize2: 2000000

@@ -1,8 +1,8 @@
-title: DQ model
-outDir: /home/will/goMortgage/dq1
+title: Prepay Scoring Model
+outDir: /home/will/goMortgage/oo
 buildData: yes
-buildModel: no
-assessModel: no
+buildModel: yes
+assessModel: yes
 
 // ************* buildData keys *************
 
@@ -14,12 +14,11 @@ sampleSize1: 30000000
 where1: AND aoAge >= 0 AND aoDq >= 0 AND aoDq <= 24 AND aoUpb > 10000 AND mon.zb='00'
 
 // fields to stratify on at pass 2
-strats2: fcstMonth, trgDt
+strats2: trgDt
 // target # of rows in output of pass 2
 sampleSize2: 3000000
-// at the target date, we restrict to dates after the as-of date which are active.
-where2:  AND trgZb='00' AND fcstMonth > 0
-//window: 24
+// Assess performance over the 24 months after the as-of date
+window: 24
 
 // fannie mortgage data created by https://pkg.go.dev/github.com/invertedv/fannie
 mtgDb: mtg.fannie
@@ -34,20 +33,20 @@ econDb: econGo.final
 econFields: zip3
 
 // outputs
-pass1Strat: tmp.stratDq1
-pass1Sample: tmp.sampleDq1
-pass2Strat: tmp.stratDq2X
-pass2Sample: tmp.sampleDq2X
+pass1Strat: tmp.stratPp1
+pass1Sample: tmp.samplePp1
+pass2Strat: tmp.stratPp2
+pass2Sample: tmp.samplePp2
 // final table
-outTable: tmp.modelDqX
+outTable: tmp.modelPp
 // key for final table
 tableKey: lnId
 
 // ************* buildModel keys *************
 
-// targetDq is an int32 field that takes on values 0,..,13 (current, 1-11 months DQ, 12+ months DQ).
-target: targetDq
-// We treat targetDq as categorical - which will build a model with a softmax output layer
+// targetPp is an int32 field that takes on values 0, 1 -- 1 means prepayed in 24 month window after aoDt
+target: targetPp
+// We treat targetpp as categorical - which will build a model with a softmax output layer
 targetType: cat
 
 // one-hot features.  Note, it's fine for this to take up multple lines
@@ -65,7 +64,7 @@ emb:  aoDq{5}; state {4}; fcstMonth{2}; trgAge{2}
 layer1: FC(size:40, activation:relu)
 layer2: FC(size:20, activation:relu)
 layer3: FC(size:10, activation:relu)
-layer4: FC(size:13, activation:softmax)
+layer4: FC(size:2, activation:softmax)
 
 // Other specifications for the model build.
 batchSize: 5000
@@ -76,24 +75,23 @@ learningRateEnd: .0001
 
 // This query pulls the data for fitting the coefficients.  The %s will be replaced with the fields we need.
 // The bucket field is a hash of the loan number.
-modelQuery: SELECT %s FROM tmp.modelDq WHERE bucket < 10
+modelQuery: SELECT %s FROM tmp.modelPp WHERE bucket < 10
 
 // This query pulls the data for determining early stopping.
-validateQuery: SELECT %s FROM tmp.modelDq WHERE bucket in (10,11,12,13,14)
-
+validateQuery: SELECT %s FROM tmp.modelPp WHERE bucket in (10,11,12,13,14)
 
 
 // ************* assessModel keys *************
 
 // This query pulls the data for the assessments.
-assessQuery: SELECT %s FROM tmp.modelDq WHERE bucket in (15,16,17,18,19)
+assessQuery: SELECT %s FROM tmp.modelPp WHERE bucket in (15,16,17,18,19)
 
 // save Assess Data + model output.
 // The table will consist of all the fields used during the run plus any set of model outputs you specify.
-saveTable: tmp.outDq
+saveTable: tmp.outPp
 
 // We're saving five fields from the model output.
-saveTableTargets: d120p{4,5,6,7,8,9,10,11,12}; d90{3}; d60{2}; d30{1}; current{0}
+saveTableTargets: prepay{1}
 
 // Features not in the model we wish to keep and treat as categorical.  These can be used in the assessment.
 addlCat: targetAssist, aoMaxDq12, vintage, aoDqCap6, numBorr
@@ -105,45 +103,28 @@ addlKeep: lnId, aoDt, trgDt
 assessAddl: aoIncome50, aoEItb50,  trgPti10, trgPti90, ltv, aoMaxDq12, trgUpbExp, state, aoIncome90, msaLoc,
   aoPropVal, trgPropVal, vintage
 
-// Run a by-feature assessment that is sliced by aoDqCap6 on the binary output that coalesces targetDq into two groups
-// of (0,1,2,3) and (4,5,6,7,8,9,10,11,12).  aoDqCap6 is the delinquency status at the as-of date where the
-// delinquency levels are 0 trough 5 and 6+ months.
-assessNameaoDq: DQ 4+ Months
-assessTargetaoDq: 4,5,6,7,8,9,10,11,12
+// Run a by-feature assessment that is sliced by aoDqCap6
+assessNameaoDq: Prepay
+assessTargetaoDq: 1
 assessSliceraoDq: aoDqCap6
 
 // Run another assessment that is sliced by occupancy.
-assessNameOcc: DQ 4+ Months
-assessTargetOcc: 4,5,6,7,8,9,10,11,12
+assessNameOcc: Prepay
+assessTargetOcc: 1
 assessSlicerOcc: occ
 
-// Run a by-curve assessment where the metric on the binary output that coalesces into two groups:
-// 0-3 months DQ and 4+ months DQ. The graph will be two curves: model and average rate of 4+ months DQ
-// where the average is over the distinct levels of trgYrQtr.
-// trgYrQtr is the the Year & Quarter of the target date.
-curvesNameyrQtrD120: Target Quarter, DQ 4+ Months
-curvesTargetyrQtrD120: 4,5,6,7,8,9,10,11,12
-curvesSliceryrQtrD120: trgYrQtr
+// Run a by-curve assessments
+curvesNameyrQtr: Target Quarter, Prepay
+curvesTargetyrQtr: 1
+curvesSliceryrQtr: trgYrQtr
 
-curvesNamevintageD120: Vintage, DQ 4+ Months
-curvesTargetvintageD120: 4,5,6,7,8,9,10,11,12
-curvesSlicervintageD120: vintage
+curvesNamevintage: Vintage, Prepay
+curvesTargetvintage: 1
+curvesSlicervintage: vintage
 
-curvesNamefmD120: Forecast Month, DQ 4+ Months
-curvesTargetfmD120: 4,5,6,7,8,9,10,11,12
-curvesSlicerfmD120: fcstMonth
-
-curvesNametrgAgeD120: Forecast Month, DQ 4+ Months
-curvesTargettrgAgeD120: 4,5,6,7,8,9,10,11,12
-curvesSlicertrgAgeD120: trgAge
-
-curvesNameyrQtrD30: Target Quarter, DQ 1 Month
-curvesTargetyrQtrD30: 1
-curvesSliceryrQtrD30: trgYrQtr
-
-curvesNameyrQtrCur: Target Quarter, Current
-curvesTargetyrQtrCur: 0
-curvesSliceryrQtrCur: trgYrQtr
+curvesNametrgAge: Forecast Month, Prepay
+curvesTargettrgAge: 1
+curvesSlicertrgAge: trgAge
 
 // general
 show: no

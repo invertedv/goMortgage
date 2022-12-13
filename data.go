@@ -188,9 +188,8 @@ func newPipe(qry, name string, specs specsMap, bSize int, fts sea.FTypes,
 func pass1(specs specsMap, conn *chutils.Connect, log *os.File) error {
 	specs["goodLoan"], specs["where"] = specs.goodLoan(), ""
 
-	if where1, ok := specs["where1"]; ok {
-		specs["where"] = where1
-	}
+	// put user where1 key in "where"
+	specs.getWhere(1)
 
 	specs["fields"] = specs.pass1Fields()
 	qry := buildQuery(withPass1, specs)
@@ -238,12 +237,13 @@ func pass1(specs specsMap, conn *chutils.Connect, log *os.File) error {
 //   - mtgFields
 //   - plotShow
 func pass2(specs specsMap, conn *chutils.Connect, log *os.File) error {
-	specs["where"] = ""
-	if where2, ok := specs["where2"]; ok {
-		specs["where"] = where2
-	}
-
+	// put user where2 key in "where"
+	specs.getWhere(2)
 	specs["fields"] = fmt.Sprintf("%s, %s", specs.mtgFields(), specs.pass2Fields())
+
+	// if there is no window, then withPass2 needs to add an arrayJoin
+	specs.windowExtras()
+
 	qry := buildQuery(withPass2, specs)
 
 	sampleSize, e := strconv.ParseInt(specs["sampleSize2"], base10, bits32)
