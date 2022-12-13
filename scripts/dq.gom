@@ -1,8 +1,8 @@
 title: DQ model
-outDir: /home/will/goMortgage/dq1
+outDir: /home/will/goMortgage/dq
 buildData: yes
-buildModel: no
-assessModel: no
+buildModel: yes
+assessModel: yes
 
 // ************* buildData keys *************
 
@@ -11,15 +11,14 @@ strats1: state, aoDt, aoAge, aoDqCap6
 // target # of rows in output of pass 1
 sampleSize1: 30000000
 // at the as-of date, we restrict to active loans with a max dq of 24 months and balance greater than $10k
-where1: AND aoAge >= 0 AND aoDq >= 0 AND aoDq <= 24 AND aoUpb > 10000 AND mon.zb='00'
+where1: aoAge >= 0 AND aoDq >= 0 AND aoDq <= 24 AND aoUpb > 10000 AND mon.zb='00'
 
 // fields to stratify on at pass 2
 strats2: fcstMonth, trgDt
 // target # of rows in output of pass 2
 sampleSize2: 3000000
 // at the target date, we restrict to dates after the as-of date which are active.
-where2:  AND trgZb='00' AND fcstMonth > 0
-//window: 24
+where2:  trgZb='00' AND fcstMonth > 0
 
 // fannie mortgage data created by https://pkg.go.dev/github.com/invertedv/fannie
 mtgDb: mtg.fannie
@@ -36,10 +35,10 @@ econFields: zip3
 // outputs
 pass1Strat: tmp.stratDq1
 pass1Sample: tmp.sampleDq1
-pass2Strat: tmp.stratDq2X
-pass2Sample: tmp.sampleDq2X
+pass2Strat: tmp.stratDq2
+pass2Sample: tmp.sampleDq2
 // final table
-outTable: tmp.modelDqX
+outTable: tmp.modelDq
 // key for final table
 tableKey: lnId
 

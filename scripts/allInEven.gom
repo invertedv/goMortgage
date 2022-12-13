@@ -1,7 +1,7 @@
 title: All-In model, Even Sampling of Target
 outDir: /home/will/goMortgage/allInEven
-buildData: no
-buildModel: no
+buildData: yes
+buildModel: yes
 assessModel: yes
 
 // buildData settings
@@ -46,7 +46,7 @@ validateQuery: SELECT %s FROM tmp.modelEven WHERE bucket in (10,11,12,13,14)
 
 // assessModel settings
 assessQuery: SELECT %s FROM tmp.modelEven WHERE bucket in (15,16,17,18,19)
-graphs: graphsEven1
+graphs: graphsEven
 
 // save Assess Data + model output
 //saveTable: tmp.outAllInIter3
@@ -61,7 +61,7 @@ targetsMod: pMod{1}
 assessAddl: aoIncome50, aoEItb50,  trgPti10, trgPti90, ltv, aoMaxDq12, trgUpbExp, state, aoIncome90, msaLoc,
   aoPropVal, trgPropVal, vintage
 
-assessNameaoDqD120: D120+
+assessNameaoDqD120: 4+ Months DQ
 assessTargetaoDqD120: 4,5,6,7,8,9,10,11,12
 assessSliceraoDqD120: aoDqCap6
 
@@ -82,7 +82,7 @@ curvesNametrgAgeDef: Target Age, Default
 curvesTargettrgAgeDef: 14
 curvesSlicertrgAgeDef: trgAge
 
-curvesNametrgAgeD120: Target Age, D120+
+curvesNametrgAgeD120: Target Age, 4+ Months DQ
 curvesTargettrgAgeD120: 4,5,6,7,8,9,10,11,12
 curvesSlicertrgAgeD120: trgAge
 
@@ -94,15 +94,15 @@ curvesNameyrQtrDef: Target Quarter, Default
 curvesTargetyrQtrDef: 14
 curvesSliceryrQtrDef: trgYrQtr
 
-curvesNameyrQtrD120: Target Quarter, D120+
+curvesNameyrQtrD120: Target Quarter, 4+ Months DQ
 curvesTargetyrQtrD120: 4,5,6,7,8,9,10,11,12
 curvesSliceryrQtrD120: trgYrQtr
 
-curvesNamevintageD120: Vintage, D120+
+curvesNamevintageD120: Vintage, 4+ Months DQ
 curvesTargetvintageD120: 4,5,6,7,8,9,10,11,12
 curvesSlicervintageD120: vintage
 
-curvesNamefmD120: Forecast Month, D120+
+curvesNamefmD120: Forecast Month, 4+ Months DQ
 curvesTargetfmD120: 4,5,6,7,8,9,10,11,12
 curvesSlicerfmD120: fcstMonth
 
