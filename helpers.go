@@ -14,6 +14,7 @@ import (
 )
 
 // embed sql into strings
+// BYOD
 var (
 	//go:embed sql/passes/pass1.sql
 	withPass1 string
@@ -27,23 +28,44 @@ var (
 	//go:embed sql/fannie/mtgFieldsStatic.sql
 	fannieMtgFieldsStat string
 
+	//go:embed sql/freddie/mtgFieldsStatic.sql
+	freddieMtgFieldsStat string
+
 	//go:embed sql/fannie/mtgFieldsMonthly.sql
 	fannieMtgFieldsMon string
+
+	//go:embed sql/freddie/mtgFieldsMonthly.sql
+	freddieMtgFieldsMon string
 
 	//go:embed sql/fannie/goodloan.sql
 	fannieGoodLoan string
 
+	//go:embed sql/freddie/goodloan.sql
+	freddieGoodLoan string
+
 	//go:embed sql/fannie/pass1Fields.sql
 	fanniePass1 string
+
+	//go:embed sql/freddie/pass1Fields.sql
+	freddiePass1 string
 
 	//go:embed sql/fannie/pass2Fields.sql
 	fanniePass2Fields string
 
+	//go:embed sql/freddie/pass2Fields.sql
+	freddiePass2Fields string
+
 	//go:embed sql/fannie/pass2FieldsWindow.sql
 	fanniePass2FieldsWindow string
 
+	//go:embed sql/freddie/pass2FieldsWindow.sql
+	freddiePass2FieldsWindow string
+
 	//go:embed sql/fannie/pass3Fields.sql
 	fanniePass3Calcs string
+
+	//go:embed sql/freddie/pass3Fields.sql
+	freddiePass3Calcs string
 
 	//go:embed sql/econ/zip3With.sql
 	econTable3 string

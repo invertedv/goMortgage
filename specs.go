@@ -13,7 +13,9 @@ import (
 )
 
 const (
-	fannie = "fannie"
+	// BYOD
+	fannie  = "fannie"
+	freddie = "freddie"
 
 	plotWidth  = 1600.0
 	plotHeight = 1200.0
@@ -1007,42 +1009,7 @@ func readSpecsMap(specFile string) (specsMap, error) {
 	return sMap, nil
 }
 
-// The methods below deal with specific data sources (e.g. fannie)
-
-// mtgFields returns the Pass3 goMortgage fields from the data source specified in the specs field <mtgFields>
-func (sf specsMap) mtgFields() string {
-
-	switch sf["mtgFields"] {
-	case fannie:
-		if w, _ := sf.window(); w > 0 {
-			return fannieMtgFieldsStat
-		}
-		return fmt.Sprintf("%s, %s", fannieMtgFieldsStat, fannieMtgFieldsMon)
-	default:
-		return ""
-	}
-}
-
-// goodLoan returns the Pass1 WHERE clause for the data source the restricts selections to loans that pass QA.
-func (sf specsMap) goodLoan() string {
-	switch sf["mtgFields"] {
-	case fannie:
-		return fannieGoodLoan
-	default:
-		return ""
-	}
-}
-
-// pass1Fields returns the Pass1 fields for the data source.
-func (sf specsMap) pass1Fields() string {
-	switch sf["mtgFields"] {
-	case fannie:
-		return fanniePass1
-	default:
-		return ""
-	}
-}
-
+// getWhere returns the "WHERE" clause for the pass
 func (sf specsMap) getWhere(pass int) {
 	sf["where"] = ""
 
@@ -1058,12 +1025,9 @@ func (sf specsMap) getWhere(pass int) {
 
 		sf["where"] = fmt.Sprintf(" AND %s", where)
 	}
-
-	return
 }
 
 func (sf specsMap) windowExtras() {
-
 	// not a window data pull, so we need to array join on monthly
 	if win, _ := sf.window(); win == 0 {
 		sf["arrayJoin"] = " ARRAY JOIN monthly AS mon"
@@ -1074,7 +1038,55 @@ func (sf specsMap) windowExtras() {
 	return
 }
 
+// The methods below deal with specific data sources (e.g. fannie)
+
+// mtgFields returns the Pass3 goMortgage fields from the data source specified in the specs field <mtgFields>
+// BYOD
+func (sf specsMap) mtgFields() string {
+	switch sf["mtgFields"] {
+	case fannie:
+		if w, _ := sf.window(); w > 0 {
+			return fannieMtgFieldsStat
+		}
+		return fmt.Sprintf("%s, %s", fannieMtgFieldsStat, fannieMtgFieldsMon)
+	case freddie:
+		if w, _ := sf.window(); w > 0 {
+			return freddieMtgFieldsStat
+		}
+		return fmt.Sprintf("%s, %s", freddieMtgFieldsStat, freddieMtgFieldsMon)
+	default:
+		return ""
+	}
+}
+
+// goodLoan returns the Pass1 WHERE clause for the data source the restricts selections to loans that pass QA.
+// BYOD
+func (sf specsMap) goodLoan() string {
+	switch sf["mtgFields"] {
+	case fannie:
+		return fannieGoodLoan
+	case freddie:
+		return freddieGoodLoan
+	default:
+		return ""
+	}
+}
+
+// pass1Fields returns the Pass1 fields for the data source.
+// BYOD
+func (sf specsMap) pass1Fields() string {
+	switch sf["mtgFields"] {
+	case fannie:
+		return fanniePass1
+	case freddie:
+		return freddiePass1
+	default:
+		return ""
+	}
+}
+
 // pass2Fields returns the Pass2 fields for the data source.
+// BYOD
 func (sf specsMap) pass2Fields() string {
 	switch sf["mtgFields"] {
 	case fannie:
@@ -1083,16 +1095,25 @@ func (sf specsMap) pass2Fields() string {
 		} else {
 			return fanniePass2FieldsWindow
 		}
+	case freddie:
+		if window, _ := sf.window(); window == 0 {
+			return freddiePass2Fields
+		} else {
+			return freddiePass2FieldsWindow
+		}
 	default:
 		return ""
 	}
 }
 
 // pass3Fields returns the Pass3 fields for the data source.
+// BYOD
 func (sf specsMap) pass3Fields() string {
 	switch sf["mtgFields"] {
 	case fannie:
 		return fanniePass3Calcs
+	case freddie:
+		return freddiePass3Calcs
 	default:
 		return ""
 	}
