@@ -6,8 +6,8 @@ assessModel: yes
 // model settings
 target: targetStatus
 targetType: cat
-biasQuery: SELECT %s FROM tmp.model WHERE bucket < 10
-assessQuery: SELECT %s FROM tmp.model WHERE bucket in (15,16,17,18,19)
+biasQuery: SELECT %s FROM tmp.modelAllIn WHERE bucket < 10
+assessQuery: SELECT %s FROM tmp.modelAllIn WHERE bucket in (15,16,17,18,19)
 
 // output locations
 biasDir: modelBias
@@ -24,7 +24,7 @@ locationMod: /home/will/goMortgage/mod/model
 targetsMod: pMod{1}
 
 // assessment
-assessAddl: aoIncome50, aoEItb50,  trgPti10, trgPti90, ltv, aoMaxDq12, trgUpbExp, state, aoIncome90, msaLoc,
+assessAddl: aoIncome50, ltv, aoMaxDq12, trgUpbExp, state, aoIncome90, msaLoc,
   aoPropVal, trgPropVal, vintage
 
 assessNameaoDqD120: 4+ Months DQ

@@ -9,8 +9,8 @@ strats1: noGroups
 sampleSize1: 30000000
 strats2: targetStatus
 sampleSize2: 2000000
-where1: AND aoAge >= 0 AND aoDq >= 0 AND aoDq <= 24 AND aoUpb > 10000 AND mon.zb='00'
-where2:  AND trgZb IN ('00', '01', '03', '09') AND fcstMonth > 0
+where1: aoAge >= 0 AND aoDq >= 0 AND aoDq <= 24 AND aoUpb > 10000 AND mon.zb='00'
+where2:  trgZb IN ('00', '01', '03', '09') AND fcstMonth > 0
 mtgDb: mtg.fannie
 mtgFields: fannie
 econDb: econGo.final
@@ -26,18 +26,18 @@ tableKey: lnId
 target: targetStatus
 targetType: cat
 cat: purpose, propType, occ, amType, standard, nsDoc, nsUw, coBorr, hasSecond, aoPrior30, aoPrior60, aoPrior90p, harp,
-  aoMod, aoBap, channel, covid, fcType, potentialDqMax, potentialDqMin
-cts: fico, term, y20PropVal, units, dti, trgUnempRate, trgEltv, aoMonthsCur, trgPti50, trgRefiIncentive, lbrGrowth,
-  spread, pMod, fcTime
-emb: aoDq{5}; state{4}; servMapped{4}; trgAge{2}; fcstMonth{2}
-addlCat: targetAssist, aoMaxDq12, vintage, aoDqCap6, numBorr, fcstMonth
+  aoMod, aoBap, channel, covid, trgFcType, trgDqMax
+cts: fico, term, y20PropVal, units, dti, trgUnempRate, trgEltv, aoMonthsCur, trgPti50, trgRefiIncentive, trgLbrGrowth,
+  orgSpread, trgFcTime
+emb: aoDq{5}; state{4}; trgAge{2}; fcstMonth{2}
+addlCat: targetAssist, aoMaxDq12, vintage, aoDqCap6, numBorr
 addlKeep: lnId
 layer1: FC(size:40, activation:relu)
 layer2: FC(size:20, activation:relu)
 layer3: FC(size:20, activation:relu)
 layer4: FC(size:15, activation:softmax)
-batchSize: 15000
-epochs: 2500
+batchSize: 5000
+epochs: 1500
 earlyStopping: 40
 learningRateStart: .0003
 learningRateEnd: .0001
@@ -52,13 +52,8 @@ graphs: graphsEven
 //saveTable: tmp.outAllInIter3
 //saveTableTargets: d120{4,5,6,7,8,9,10,11,12}; d30{1}; current{0}; prepay{13}; default{14}
 
-// existing models that are inputs
-inputModel: Mod
-locationMod: /home/will/goMortgage/mod/model
-targetsMod: pMod{1}
-
 // assessment
-assessAddl: aoIncome50, aoEItb50,  trgPti10, trgPti90, ltv, aoMaxDq12, trgUpbExp, state, aoIncome90, msaLoc,
+assessAddl: aoIncome50, ltv, aoMaxDq12, trgUpbExp, state, aoIncome90, msaLoc,
   aoPropVal, trgPropVal, vintage
 
 assessNameaoDqD120: 4+ Months DQ

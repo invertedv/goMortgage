@@ -9,8 +9,8 @@ strats1: state, aoDt, aoAge, aoDqCap6
 sampleSize1: 30000000
 strats2: fcstMonth, trgDt
 sampleSize2: 3000000
-where1: AND aoAge >= 0 AND aoDq >= 0 AND aoDq <= 24 AND aoUpb > 10000 AND mon.zb='00'
-where2:  AND fcstMonth > 0 AND trgZb IN ('00', '01', '03', '09')
+where1: aoAge >= 0 AND aoDq >= 0 AND aoDq <= 24 AND aoUpb > 10000 AND mon.zb='00'
+where2:  fcstMonth > 0 AND trgZb IN ('00', '01', '03', '09')
 mtgDb: mtg.fannie
 mtgFields: fannie
 econDb: econGo.final

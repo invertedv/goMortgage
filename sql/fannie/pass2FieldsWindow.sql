@@ -1,3 +1,4 @@
+// this field list is used if there is a window key in the .gom file
 // these are fields from pass1 that carry over to the sample2 table
 dateDiff('month', s.aoDt, trgDt) AS fcstMonth,
 s.msaLoc,

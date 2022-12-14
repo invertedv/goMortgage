@@ -1,25 +1,3 @@
-// goMortgage fits models that forecast the performance of goMortgage loans at the loan level.
-//
-// The model-build specs files is in key:val format.  Legal values are:
-//
-//   - model: <model name>
-//   - buildData: <yes>, <no>
-//   - buildModel: <yes>, <no>
-//   - mtgDb: <ClickHouse table>
-//   - econDb: <ClickHouse table>
-//   - econFields: <zip3>, <zip>   key of econDb to use for joins to mtgDb
-//   - outDir: <full path to output directory for this run>
-//   - pass1Strat: <ClickHouse table>  name of table to store strats from pass 1 sampling
-//   - pass1Table: <ClickHouse table>  name of table to create with pass 1 sample of loans
-//   - pass2Strat: <ClickHouse table>  name of table to store strats from pass 2 sampling
-//   - pass2Table: <ClickHouse table>  name of table to create with pass 2 sample of loans
-//   - modelTable: <Clickhouse table>  name of table to create with model-build sample
-//   - log: <log file>  name of log file to create in outDir
-//   - show: <yes>, <no>  if yes, show all graphs in browser, too.
-//   - inputModel: <name>.  Name of input model to add to model-build pipeline.
-//   - <name>Location: <path to directory containing model <name>>
-//   - <name>Targets: <field name:targets> (repeating with semi-colons).  For model <name>, the field name to create in
-//     pipeline along with the columns to coalesce into this output.
 package main
 
 import (

@@ -122,8 +122,9 @@ func biasCorrect(specs specsMap, conn *chutils.Connect, log *os.File) error {
 		Recorder:          nil,
 		Concurrent:        12,
 	}
+
 	if optimal, e = optimize.Minimize(problem, bAdj, settings, &optimize.Newton{}); e != nil {
-		return e
+		logger(log, fmt.Sprintf("%s -- check SSE is reasonable", e.Error()), true)
 	}
 
 	logger(log, fmt.Sprintln("bias corrections factors", optimal.X), true)
@@ -152,6 +153,10 @@ func biasCorrect(specs specsMap, conn *chutils.Connect, log *os.File) error {
 
 	// save our results.  We'll copy over everything from the source model and then save the NN over the top of it.
 	if loc, e = makeSubDir(specs["outDir"], specs.biasDir()); e != nil {
+		return e
+	}
+
+	if _, e = makeSubDir(loc, "inputModels"); e != nil {
 		return e
 	}
 

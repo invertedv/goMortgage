@@ -1,6 +1,6 @@
 title: Prepay Scoring Model
 outDir: /home/will/goMortgage/prepay
-buildData: no
+buildData: yes
 buildModel: yes
 assessModel: yes
 
@@ -17,6 +17,8 @@ where1: aoAge >= 0 AND aoDq >= 0 AND aoDq <= 24 AND aoUpb > 10000 AND mon.zb='00
 strats2: trgDt
 // target # of rows in output of pass 2
 sampleSize2: 3000000
+// restrict to loans that are either (a) still active at end of window; (b) prepay or (c) default
+where2: trgZb in ('00', '01', '03', '09')
 // Assess performance over the 24 months after the as-of date
 window: 24
 
@@ -51,11 +53,11 @@ targetType: cat
 
 // one-hot features.  Note, it's fine for this to take up multple lines
 cat: purpose, propType, occ, amType, standard, nsDoc, nsUw, coBorr, hasSecond, aoPrior30, aoPrior60,
-  aoPrior90p, harp, aoMod, aoBap, channel, covid, trgFcType, potentialDqMax, potentialDqMin
+  aoPrior90p, harp, aoMod, aoBap, channel, covid, trgFcType, trgDqMax
 
 // Continuous features.  Note, these will automatically be normalized.
 cts: fico, aoAge, term, y20PropVal, units, dti, trgUnempRate, trgEltv,
-  trgRefiIncentive, lbrGrowth, spread
+  trgRefiIncentive, trgLbrGrowth, orgSpread
 
 // Embedded features.  The embedding dimension is in the braces.
 emb:  aoDq{5}; state {4}; trgAge{2}

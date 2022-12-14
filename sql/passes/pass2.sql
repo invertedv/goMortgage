@@ -13,8 +13,9 @@ JOIN
 ON
     lns.lnId = s.lnId
 WHERE
+  // we have fcstMonth >= 0 because a model (e.g. netPro.gom) might want the fcstMonth=0 data
   fcstMonth >= 0
   AND fcstMonth <= 180
   AND trgRemTerm > 0
   <where>
-    )
+   )

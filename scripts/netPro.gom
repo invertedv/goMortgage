@@ -1,18 +1,27 @@
 title: Net Proceeds Model with servMapped:4 and state:4
+outDir: /home/will/goMortgage/netPro
 buildData: yes
 buildModel: yes
+assessModel: yes
 
 // data settings
 strats1: state
 sampleSize1: 1000000
 strats2: aoZb
 sampleSize2: 750000
-where1: AND mon.zb IN ('03', '09')
-where2:  AND fcstMonth=0 
+where1: mon.zb IN ('03', '09')
+where2:  fcstMonth=0
+
 mtgDb: mtg.fannie
 mtgFields: fannie
+
 econDb: econGo.final
 econFields: zip3
+pass1Strat: tmp.stratNP1
+pass1Sample: tmp.sampleNP1
+pass2Strat: tmp.stratNP2
+pass2Sample: tmp.sampleNP2
+outTable: tmp.modelNetPro
 
 // model settings
 target: targetNetPro
@@ -29,24 +38,15 @@ epochs: 2000
 earlyStopping: 40
 learningRateStart: .0005
 learningRateEnd: .0001
-modelQuery: WITH d AS (SELECT %s FROM %s WHERE bucket < 10  limit 2500000) select * from d where 1=1
-validateQuery: WITH d AS (SELECT %s FROM %s WHERE bucket in (10,11,12,13,14) limit 1250000) select * from d where 1=1
-assessQuery: WITH d AS (SELECT %s FROM %s WHERE bucket in (15,16,17,18,19) limit 1250000) select * from d where 1=1   
+modelQuery: WITH d AS (SELECT %s FROM tmp.modelNetPro WHERE bucket < 10  limit 2500000) select * from d where 1=1
+validateQuery: WITH d AS (SELECT %s FROM tmp.modelNetPro WHERE bucket in (10,11,12,13,14) limit 1250000) select * from d where 1=1
 
-// output locations
-outDir: /home/will/goMortgage/netPro
-pass1Strat: tmp.stratNP1
-pass1Sample: tmp.sampleNP1
-pass2Strat: tmp.stratNP2
-pass2Sample: tmp.sampleNP2
-modelTable: tmp.modelNetPro
+// assess
+assessQuery: WITH d AS (SELECT %s FROM tmp.modelNetPro WHERE bucket in (15,16,17,18,19) limit 1250000) select * from d where 1=1
 
 // save Assess Data + model output
 saveTable: tmp.outNetPro
 saveTableTargets: netProHat: 0
-
-// assessment
-assessAddl: aoIncome50, cltv, ltv, state, aoIncome90, servMapped, msaLocName, vintage, y20PropVal
 
 assessNamePropType: Property Type
 assessTargetPropType: 0
