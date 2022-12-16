@@ -510,6 +510,16 @@ func (sf specsMap) ctsFeatures() []string {
 	return toSlice(sf["cts"], ",")
 }
 
+// allCts returns continuous features plus the target, if the target is continuous
+func (sf specsMap) allCts() []string {
+	cts := sf.ctsFeatures()
+	if sf.targetType() == sea.FRCts {
+		return append(cts, sf.target())
+	}
+
+	return cts
+}
+
 // ohFeatures returns a slice of the one-hot features in the model
 func (sf specsMap) ohFeatures() []string {
 	if _, ok := sf["cat"]; !ok {

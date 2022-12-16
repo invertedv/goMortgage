@@ -95,7 +95,7 @@ saveTable: tmp.outDq
 saveTableTargets: d120p{4,5,6,7,8,9,10,11,12}; d90{3}; d60{2}; d30{1}; current{0}
 
 // Features not in the model we wish to keep and treat as categorical.  These can be used in the assessment.
-addlCat: targetAssist, aoMaxDq12, vintage, aoDqCap6, numBorr
+addlCat: aoMaxDq12, vintage, aoDqCap6, numBorr
 
 // Features to keep, either for assessment or to add to the output table.
 addlKeep: lnId, aoDt, trgDt

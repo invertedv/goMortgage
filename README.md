@@ -3,9 +3,7 @@
 [![godoc](https://img.shields.io/badge/go.dev-reference-007d9c?logo=go&logoColor=white)](https://pkg.go.dev/mod/github.com/invertedv/goMortgage?tab=overview)
 
 ### Summary
-goMortgage is an app for building models to forecast mortgage performance.  It is the culmination of many years
-experience building these models. See my [linkedIn](www.linkedin.com/in/will-alexander-data-scientist) profile for 
-more about me. 
+goMortgage is an app for building models to forecast mortgage performance.  
 
 goMortgage is unusual in many dimensions. It's a one-stop modeling platform that will build both the modeling
 dataset and the model.

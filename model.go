@@ -112,7 +112,7 @@ func model(specs specsMap, conn *chutils.Connect, log *os.File) error {
 	logger(log, fmt.Sprintf("%v", modelPipe), false)
 
 	// add defaults and restrict fts to features defined in specs append(specs.allCat(), specs.ctsFeatures()...)
-	if fts, e = addDefault(modelPipe, append(specs.ctsFeatures(), specs.allCat()...)); e != nil {
+	if fts, e = addDefault(modelPipe, append(specs.allCts(), specs.allCat()...)); e != nil {
 		return e
 	}
 
