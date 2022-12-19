@@ -31,13 +31,13 @@ cts: fico, term, y20PropVal, units, dti, trgUnempRate, trgEltv, aoMonthsCur, trg
   orgSpread, trgFcTime
 emb: aoDq{5}; state{4}; trgAge{2}; fcstMonth{2}
 addlCat: targetAssist, aoMaxDq12, vintage, aoDqCap6, numBorr
-addlKeep: lnId
+addlKeep: lnId, aoDt, trgDt
 layer1: FC(size:40, activation:relu)
 layer2: FC(size:20, activation:relu)
 layer3: FC(size:20, activation:relu)
 layer4: FC(size:15, activation:softmax)
 batchSize: 5000
-epochs: 1500
+epochs: 5000
 earlyStopping: 40
 learningRateStart: .0003
 learningRateEnd: .0001
@@ -49,7 +49,7 @@ assessQuery: SELECT %s FROM tmp.modelEven WHERE bucket in (15,16,17,18,19)
 graphs: graphsEven
 
 // save Assess Data + model output
-//saveTable: tmp.outAllInIter3
+//saveTable: tmp.outAllIn
 //saveTableTargets: d120{4,5,6,7,8,9,10,11,12}; d30{1}; current{0}; prepay{13}; default{14}
 
 // assessment

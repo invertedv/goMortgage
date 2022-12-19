@@ -1,4 +1,4 @@
-title: Net Proceeds Model with servMapped:4 and state:4
+title: Net Proceeds Model
 outDir: /home/will/goMortgage/netPro
 buildData: no
 buildModel: yes

@@ -10,12 +10,13 @@ biasQuery: SELECT %s FROM tmp.modelAllIn WHERE bucket < 10
 assessQuery: SELECT %s FROM tmp.modelAllIn WHERE bucket in (15,16,17,18,19)
 
 // output locations
+model: modelBias  // REMOVE
 biasDir: modelBias
 graphs: graphsStrat
 
 // save Assess Data + model output
 addlKeep: lnId
-saveTable: tmp.outAllInStratIter3
+saveTable: tmp.outAllInStrat
 saveTableTargets: d120{4,5,6,7,8,9,10,11,12}; d30{1}; current{0}; prepay{13}; default{14}
 
 // existing models that are inputs

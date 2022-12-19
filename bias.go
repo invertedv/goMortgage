@@ -72,7 +72,7 @@ func biasCorrect(specs specsMap, conn *chutils.Connect, log *os.File) error {
 	start := time.Now()
 	logger(log, fmt.Sprintf("starting bias correction @ %s", start.Format(time.UnixDate)), true)
 
-	if fts, e = sea.LoadFTypes(specs.modelDir() + "fieldDefs.jsn"); e != nil {
+	if fts, e = sea.LoadFTypes(specs.getkeyVal("modelDir", true) + "fieldDefs.jsn"); e != nil {
 		return e
 	}
 
@@ -81,7 +81,7 @@ func biasCorrect(specs specsMap, conn *chutils.Connect, log *os.File) error {
 	}
 
 	// get model predictions from the unadjusted model.
-	nnModel, err := sea.PredictNN(specs.modelDir()+"model", modelPipe, false)
+	nnModel, err := sea.PredictNN(specs.modelRoot(), modelPipe, false)
 	if err != nil {
 		return err
 	}
@@ -126,6 +126,9 @@ func biasCorrect(specs specsMap, conn *chutils.Connect, log *os.File) error {
 	if optimal, e = optimize.Minimize(problem, bAdj, settings, &optimize.Newton{}); e != nil {
 		logger(log, fmt.Sprintf("%s -- check SSE is reasonable", e.Error()), true)
 	}
+	if optimal == nil {
+		panic("biasCorrect: biasCorrect failed")
+	}
 
 	logger(log, fmt.Sprintln("bias corrections factors", optimal.X), true)
 	logger(log, fmt.Sprintf("fit SSE: %0.5f", sseFn(optimal.X)), true)
@@ -152,7 +155,7 @@ func biasCorrect(specs specsMap, conn *chutils.Connect, log *os.File) error {
 	var loc string
 
 	// save our results.  We'll copy over everything from the source model and then save the NN over the top of it.
-	if loc, e = makeSubDir(specs["outDir"], specs.biasDir()); e != nil {
+	if loc, e = makeSubDir(specs.getkeyVal("outDir", true), specs.getkeyVal("biasDir", false)); e != nil {
 		return e
 	}
 
@@ -160,7 +163,7 @@ func biasCorrect(specs specsMap, conn *chutils.Connect, log *os.File) error {
 		return e
 	}
 
-	if ex := copyFiles(specs.modelDir(), loc); ex != nil {
+	if ex := copyFiles(specs.getkeyVal("modelDir", true), loc); ex != nil {
 		return ex
 	}
 
@@ -169,7 +172,7 @@ func biasCorrect(specs specsMap, conn *chutils.Connect, log *os.File) error {
 	}
 
 	// update the modelDir: key to point to the bias-adjusted model
-	specs["modelDir"] = loc
+	specs.assign("modelDir", loc)
 
 	elapsed := time.Since(start).Minutes()
 	logger(log, fmt.Sprintf("assessment run time: %0.1f minutes", elapsed), true)

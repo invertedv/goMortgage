@@ -72,11 +72,16 @@ var (
 
 	//go:embed sql/econ/zip3Fields.sql
 	econFields3 string
+
+	// list of all known .gom keys
+	//go:embed strings/keys.txt
+	allKeys string
 )
 
 // inits initializes exported vars Specs, Conn, LogFile
 func inits(host, user, pw, specsFile string, maxMemory, maxGroupBy int64) (specsMap, *chutils.Connect, *os.File, error) {
 	var e error
+	var modelDir string
 
 	sea.Verbose = false
 	conn, e := chutils.NewConnect(host, user, pw, clickhouse.Settings{
@@ -97,75 +102,86 @@ func inits(host, user, pw, specsFile string, maxMemory, maxGroupBy int64) (specs
 		return nil, nil, nil, er
 	}
 
+	outDir := slash(specs.getkeyVal("outDir", true))
 	switch specs.buildData() || specs.buildModel() {
 	case true:
 		// if we're building the data or the model, clean out the outDir
-		if er := os.RemoveAll(specs["outDir"]); er != nil {
+		if er := os.RemoveAll(outDir); er != nil {
 			return nil, nil, nil, er
 		}
 
-		if er := os.MkdirAll(specs["outDir"], os.ModePerm); er != nil {
+		if er := os.MkdirAll(outDir, os.ModePerm); er != nil {
 			return nil, nil, nil, er
 		}
 
-		if specs["modelDir"], e = makeSubDir(specs["outDir"], specs.modelKey()); e != nil {
+		if modelDir, e = makeSubDir(outDir, specs.modelKey()); e != nil {
 			return nil, nil, nil, e
 		}
+		specs.assign("modelDir", modelDir)
 
 	case false:
 		// otherwise, clean out the graphs directory only
-		specs["modelDir"] = fmt.Sprintf("%s%s/", slash(specs["outDir"]), specs.modelKey())
+		specs.assign("modelDir", fmt.Sprintf("%s%s/", outDir, specs.modelKey()))
 
-		if er := os.RemoveAll(fmt.Sprintf("%s%s", slash(specs["outDir"]), specs.graphsKey())); er != nil {
+		if er := os.RemoveAll(fmt.Sprintf("%s%s", outDir, specs.graphsKey())); er != nil {
 			return nil, nil, nil, er
 		}
 	}
 
 	// create graph directory structure.
-	if specs["graphDir"], e = makeSubDir(specs["outDir"], specs.graphsKey()); e != nil {
+	var graphDir string
+	if graphDir, e = makeSubDir(outDir, specs.graphsKey()); e != nil {
 		return nil, nil, nil, e
 	}
+	specs.assign("graphDir", graphDir)
 
-	if specs["valDir"], e = makeSubDir(specs["graphDir"], "validation"); e != nil {
+	var dir string
+	if dir, e = makeSubDir(graphDir, "validation"); e != nil {
 		return nil, nil, nil, e
 	}
+	specs.assign("valDir", dir)
 
-	if specs["margDir"], e = makeSubDir(specs["graphDir"], "marginal"); e != nil {
+	if dir, e = makeSubDir(graphDir, "marginal"); e != nil {
 		return nil, nil, nil, e
 	}
+	specs.assign("margDir", dir)
 
-	if specs["costDir"], e = makeSubDir(specs["graphDir"], "cost"); e != nil {
+	if dir, e = makeSubDir(graphDir, "cost"); e != nil {
 		return nil, nil, nil, e
 	}
+	specs.assign("costDir", dir)
 
-	if specs["stratsDir"], e = makeSubDir(specs["graphDir"], "strats"); e != nil {
+	if dir, e = makeSubDir(graphDir, "strats"); e != nil {
 		return nil, nil, nil, e
 	}
+	specs.assign("stratsDir", dir)
 
-	if specs["curvesDir"], e = makeSubDir(specs["graphDir"], "curves"); e != nil {
+	if dir, e = makeSubDir(graphDir, "curves"); e != nil {
 		return nil, nil, nil, e
 	}
+	specs.assign("curvesDir", dir)
 
 	// create inputModel subdirectory
-	if specs["inputDir"], e = makeSubDir(specs.modelDir(), "inputModels"); e != nil {
+	if dir, e = makeSubDir(specs.getkeyVal("modelDir", true), "inputModels"); e != nil {
 		return nil, nil, nil, e
 	}
+	specs.assign("inputDir", dir)
 
 	// just doing assessment/bias adjustment ... append to existing log file, don't copy .gom file or input models
 	if !specs.buildData() && !specs.buildModel() {
 		// there is already a .gom file, so copy this to the date/time
 		dttm := time.Now().Format("060102150405")
-		toFile := fmt.Sprintf("%s%sdmodel.gom", specs["outDir"], dttm)
+		toFile := fmt.Sprintf("%s%sdmodel.gom", outDir, dttm)
 		if er := copyFile(specsFile, toFile); er != nil {
 			return nil, nil, nil, er
 		}
 
 		// load up the needed cts and cat feature list in this case
-		if er := specs.findFeatures(specs.modelDir(), true); er != nil {
+		if er := specs.findFeatures(specs.getkeyVal("modelDir", true), true); er != nil {
 			return nil, nil, nil, er
 		}
 
-		logFile, er := os.OpenFile(specs["outDir"]+"model.log", os.O_APPEND|os.O_WRONLY, os.ModePerm)
+		logFile, er := os.OpenFile(outDir+"model.log", os.O_APPEND|os.O_WRONLY, os.ModePerm)
 
 		if er != nil {
 			return nil, nil, nil, er
@@ -175,7 +191,7 @@ func inits(host, user, pw, specsFile string, maxMemory, maxGroupBy int64) (specs
 	}
 
 	// copy over the spec file
-	if er := copyFile(specsFile, specs["outDir"]+"model.gom"); er != nil {
+	if er := copyFile(specsFile, outDir+"model.gom"); er != nil {
 		return nil, nil, nil, er
 	}
 
@@ -185,12 +201,12 @@ func inits(host, user, pw, specsFile string, maxMemory, maxGroupBy int64) (specs
 	}
 
 	// load up required features from inputModels (there will be no model yet in modelDir() but inputModels may be populated)
-	if er := specs.findFeatures(specs.modelDir(), true); er != nil {
+	if er := specs.findFeatures(specs.getkeyVal("modelDir", true), true); er != nil {
 		return nil, nil, nil, er
 	}
 
 	// crerate log file
-	logFile, e := os.Create(specs["outDir"] + "model.log")
+	logFile, e := os.Create(outDir + "model.log")
 
 	return specs, conn, logFile, e
 }
@@ -307,7 +323,7 @@ func plotCosts(fit *sea.Fit, costName string, specs specsMap) error {
 		Height:   specs.plotHeight(),
 		Width:    specs.plotWidth(),
 		Show:     specs.plotShow(),
-		FileName: specs.costDir() + "modelSample.html",
+		FileName: specs.getkeyVal("costDir", true) + "modelSample.html",
 	}, true); e != nil {
 		return e
 	}
@@ -325,7 +341,7 @@ func plotCosts(fit *sea.Fit, costName string, specs specsMap) error {
 		Height:   specs.plotHeight(),
 		Width:    specs.plotWidth(),
 		Show:     specs.plotShow(),
-		FileName: specs.costDir() + "validationSample.html",
+		FileName: specs.getkeyVal("costDir", true) + "validationSample.html",
 	}, true); e != nil {
 		return e
 	}
@@ -355,7 +371,8 @@ func logger(log *os.File, text string, toConsole bool) {
 
 // inModel determines whether the feature is in the input statement from a sea.ModSpec
 func inModel(input, feature string) bool {
-	if len(input) < 5 {
+	const minLen = 5 // "input" has 5 letters
+	if len(input) < minLen {
 		return false
 	}
 

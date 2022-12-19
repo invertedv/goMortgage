@@ -2,69 +2,52 @@
 [![Go Report Card](https://goreportcard.com/badge/github.com/invertedv/goMortgage)](https://goreportcard.com/report/github.com/invertedv/goMortgage)
 [![godoc](https://img.shields.io/badge/go.dev-reference-007d9c?logo=go&logoColor=white)](https://pkg.go.dev/mod/github.com/invertedv/goMortgage?tab=overview)
 
-### Summary
-goMortgage is an app for building models to forecast mortgage performance.  
+## A Self-Service Program to Build Mortgage Models
 
-goMortgage is unusual in many dimensions. It's a one-stop modeling platform that will build both the modeling
-dataset and the model.
+### What is a mortgage model?
 
-goMortgage:
+A mortgage model is a predictive model that forecasts some aspect of a mortgage's performance.
+Common performance metrics are delinquency, default, severity and prepayment.
 
-   - **Is a special purpose app.**<br>
-goMortgage is an app.  The specification of the model ('specs' file) is provided to it in a text file.  Changing features of
-the model, the data used to build and validate the model, graphical evaluations of the model are all specified
-in this file.  These are things that change often during a modeling project.  With goMortgage, one isn't hacking
-into the code to do this.
-<br><br>
-   - **Provides multiple diagnostics**<br>
-There are 3 base types of graphical diagnostics produced by goMortgage:
-     - Curves.  These are the average model output and target plotted vs another field (e.g. time).
-     - KS and Decile plots for categorical targets.
-     - Segmented plots.  These plots slice the data by the levels of specific field, plottings the model and target
-     average for each slice.  
-     - Marginal plots.  These plots indicate the relation between a feature and the model output.
-<br><br>
-  - **produces live plots**<br>
-The graphs are produced using Plotly, meaning they are *live*.  Open them in your browser and hover over anything that
-looks interesting for more information.
-<br><br>
-- **incorporates flexible validations**<br>
-You choose the slices and targets to generate diagnostics.  Want to check how the model performs state-by-state?
-No problem.  Vintages? Score buckets? Also, no problem.
-  <br><br>
-- **builds cutting-edge models**<br>
-These models are DNN models.  Helpful options such as embeddings are supported. The target can be either
-categorical or continuous.  The build algorithm is the 
-[gorgonia](https://pkg.go.dev/gorgonia.org/gorgonia@v0.9.17#section-readme) package.
-  <br><br>
-- **produces lightweight models**<br>
-The models produced by goMortgage consist of only 3 text files.  Two of these specify the model and the third
-the input features.
-<br><br>
-- **produces lightweight model builds**<br>
-goMortgage is quite frugal with memory--using millions of observations is possible even in 32GB.
-However, if memory does prove limiting, the data can be streamed to the model build.
-<br><br>
-- **consdolidates its output**<br>
-The output includes the model, diagnostics, a log file and the specs file the run used.
-<br><br>
-- **builds its own data**<br>
-goMortgage will build the modeling dataset from source files.
-<br><br>
-- **is written in Go**<br>
-Go is a 21st century language.  This [post](https://yourbasic.org/golang/advantages-over-java-python/) has a nice
-desciption of its advantages.
-<br><br>
-- **is open source**<br>
-There are example scripts in the [scripts]() directory. The scripts are configured to work with the 
-ClickHouse table for the Fannie Mae data produced by [this]() package.  Since goMortgage is open source,
-it can be customized to other data sets by you.
- <br><br>
-- **and more!**
-  <br><br>
-  Note, that all this being said, goMortgage can be used to fit really any kind of model.  The key restriction
-  is that the data resides in ClickHouse.
+Such models are built on historical data and may be either at a loan level or pool level.
+goMortgage builds loan-level models.
 
-## Documentation
+### About goMortgage
 
-For more details, see the [docse]().
+goMortgage is an app that builds mortgage forecasting models.
+
+What aspects of mortgage performance can be modeled? Really, anything you can think of.  The software
+is agnostic about the model target and features.
+
+goMortgage takes a text file (*.gom) you create to direct all aspects of the modeling process
+from building datasets to model assessment.
+
+Since goMortgage is open source, goMortgage can be modified to suit your needs.
+Out of the box, it is configured to work with Freddie and Fannie data. There are
+instructions to set up your own data sources.
+
+### Why goMortgage?
+
+I wrote goMortgage for my own use. I made it open source because I thought others might find it useful, too.
+Who?
+- People who are more interested in the output of the model than building the infrastructure --
+  say people on a trading desk or academics.  Especially those who want to focus on Fannie and Freddie,
+  since I have packages ([Fannie](https://pkg.go.dev/github.com/invertedv/fannie),
+  [Freddie](https://pkg.go.dev/github.com/invertedv/freddie)) to build this data.
+- Those who don't have the bandwidth to start from scratch but enough to make the modifications for new data sources.
+
+
+### Requirements
+
+You need to be able to put up an instance of [ClickHouse](https://clickhouse.com/clickhouse).
+
+Currently, goMortgage doesn't support building DNNs on a GPU, but the run speed has been fine. You'll want
+64GB of RAM, though you could get by with less probably.
+
+The raw files for Freddie and Fannie are quite large, so you'll want a few TBs of disk.
+
+And, of course, you need to be able to compile Go.
+
+### Documentation
+
+For details, see the [docs](https://invertedv.github.io/goMortgage).

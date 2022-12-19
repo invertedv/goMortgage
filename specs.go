@@ -26,6 +26,10 @@ const (
 // accessing them elsewhere in the code.
 type specsMap map[string]string
 
+func (sf specsMap) assign(key, val string) {
+	sf[key] = val
+}
+
 // learnRate returns the starting and ending learning rate
 func (sf specsMap) learnRate() (start, end float64, err error) {
 	if lrStr, ok := sf["learningRate"]; ok {
@@ -62,24 +66,6 @@ func (sf specsMap) getQuery(table string) string {
 
 	if qry, ok := sf[key]; ok {
 		return fmt.Sprintf(qry, flds) + " " // add trailing blank
-	}
-
-	return ""
-}
-
-// biasDir returns the directory for the bias-corrected model
-func (sf specsMap) biasDir() string {
-	if bd, ok := sf["biasDir"]; ok {
-		return bd
-	}
-
-	return ""
-}
-
-// get returns the value in sp
-func (sf specsMap) get(key string) string {
-	if val, ok := sf[key]; ok {
-		return val
 	}
 
 	return ""
@@ -156,7 +142,7 @@ func (sf specsMap) slicer(base string) []slices {
 			return append(vals, item)
 		}
 		shortName := k[len(keyFind):]
-		targetStr := sf.get(fmt.Sprintf("%sTarget%s", base, shortName))
+		targetStr := sf.getkeyVal(fmt.Sprintf("%sTarget%s", base, shortName), false)
 		if targetStr == "" {
 			item = slices{name: k, feature: "", targetStr: "", target: nil}
 			return append(vals, item)
@@ -173,7 +159,7 @@ func (sf specsMap) slicer(base string) []slices {
 		}
 		item = slices{
 			name:      v,
-			feature:   sf.get(fmt.Sprintf("%sSlicer%s", base, shortName)),
+			feature:   sf.getkeyVal(fmt.Sprintf("%sSlicer%s", base, shortName), false),
 			shortName: shortName,
 			targetStr: targetStr,
 			target:    trgs,
@@ -236,13 +222,6 @@ func (sf specsMap) earlyStopping() (int, error) {
 	}
 
 	return 0, fmt.Errorf("missing earlyStopping key")
-}
-
-func (sf specsMap) startFrom() string {
-	if sfrom, ok := sf["startFrom"]; ok {
-		return sfrom
-	}
-	return ""
 }
 
 // plotShow returns true if the user wants to show all the plots in a browser, too.
@@ -400,17 +379,31 @@ func (sf specsMap) inputModels() error {
 	return nil
 }
 
-// return outTable - name of ClickHouse table buildData is to create
-func (sf specsMap) outTable() string {
-	return sf["outTable"]
+func checkKey(key string, possible []string) (ok bool) {
+	for _, poss := range possible {
+		if key == poss {
+			return true
+		}
+		if strings.Contains(poss, "*") {
+			root := strings.ReplaceAll(poss, "*", "")
+			if strings.Contains(key, root) {
+				return true
+			}
+		}
+	}
+
+	return false
 }
 
-// returns optional primary key for outTable
-func (sf specsMap) tableKey() string {
-	if key, ok := sf["tableKey"]; ok {
-		return key
+func (sf specsMap) checkKeys() (ok bool) {
+	possible := strings.Split(strings.ReplaceAll(allKeys, "\n", ""), ",")
+	for k := range sf {
+		if !checkKey(k, possible) {
+			fmt.Printf("warning: unknown key %s\n", k)
+		}
 	}
-	return ""
+
+	return true
 }
 
 // check checks that required keys are available in sf
@@ -430,6 +423,10 @@ func (sf specsMap) check() error {
 
 		requiredBias = "biasQuery, biasDir"
 	)
+
+	if !sf.checkKeys() {
+		panic("unknown keys")
+	}
 
 	// check for mandatory keys
 	reqd := toSlice(required, ",")
@@ -514,7 +511,7 @@ func (sf specsMap) ctsFeatures() []string {
 func (sf specsMap) allCts() []string {
 	cts := sf.ctsFeatures()
 	if sf.targetType() == sea.FRCts {
-		return append(cts, sf.target())
+		return append(cts, sf["target"])
 	}
 
 	return cts
@@ -534,7 +531,7 @@ func (sf specsMap) ohFields() []string {
 	eFld, _ := sf.embFeatures(false)
 	flds = append(flds, eFld...)
 	if sf.targetType() == sea.FRCat {
-		flds = append(flds, sf.target())
+		flds = append(flds, sf["target"])
 	}
 	return flds
 }
@@ -553,7 +550,7 @@ func (sf specsMap) allCat() []string {
 	emb, _ := sf.embFeatures(false)
 	all = append(all, emb...)
 	if sf.targetType() == sea.FRCat {
-		all = append(all, sf.target())
+		all = append(all, sf["target"])
 	}
 
 	return all
@@ -625,11 +622,6 @@ func (sf specsMap) embFeatures(complete bool) (parsed []string, err error) {
 	return
 }
 
-// target returns the name of the target feature.
-func (sf specsMap) target() string {
-	return sf["target"]
-}
-
 // existing returns the directory that holds the existing models
 func (sf specsMap) existing() string {
 	return sf["modelDir"] + "inputModels"
@@ -650,23 +642,13 @@ func (sf specsMap) getkeyVal(key string, must bool) string {
 	return val
 }
 
-// costDir returns the directory for the cost graphs
-func (sf specsMap) costDir() string {
-	return sf.getkeyVal("costDir", true)
-}
-
-// modelDir returns the directory for the model
-func (sf specsMap) modelDir() string {
-	return sf.getkeyVal("modelDir", true)
-}
-
 // allFields returns a slice of all the fields required by the run
 func (sf specsMap) allFields() []string {
 	aFld := sf.allFeatures()
 	aFld = append(aFld, sf.assessFields()...)
 	aFld = append(aFld, sf.addlCats()...)
 
-	aFld = append(aFld, sf.target())
+	aFld = append(aFld, sf["target"])
 	for _, sl := range sf.slicer("curves") {
 		aFld = append(aFld, sl.feature)
 	}
@@ -737,14 +719,6 @@ func (sf specsMap) queryFields() []string {
 	}
 
 	return qFlds
-}
-
-// title returns user-specified title from title: key
-func (sf specsMap) title() string {
-	if title, ok := sf["title"]; ok {
-		return title
-	}
-	return ""
 }
 
 // buildData returns true if buildData: key is yes
@@ -872,7 +846,7 @@ func (sf specsMap) findFeatures(modelDir string, top bool) error {
 	fileName = fmt.Sprintf("%sfieldDefs.jsn", modelDir)
 	input := ""
 	if top {
-		if modSpec, err = sea.LoadModSpec(fmt.Sprintf("%smodelS.nn", sf.modelDir())); err != nil {
+		if modSpec, err = sea.LoadModSpec(fmt.Sprintf("%smodelS.nn", sf.getkeyVal("modelDir", true))); err != nil {
 			return err
 		}
 		input = modSpec[0]
@@ -1045,7 +1019,6 @@ func (sf specsMap) windowExtras() {
 	}
 
 	sf["arrayJoin"] = ""
-	return
 }
 
 // The methods below deal with specific data sources (e.g. fannie)

@@ -136,7 +136,7 @@ func newPipe(qry, name string, specs specsMap, bSize int, fts sea.FTypes,
 	sea.WithCats(specs.allCat()...)(pipe)
 	sea.WithNormalized(specs.ctsFeatures()...)(pipe)
 	if specs.targetType() == sea.FRCts {
-		sea.WithNormalized(specs.target())(pipe)
+		sea.WithNormalized(specs.getkeyVal("target", true))(pipe)
 	}
 
 	for _, cat := range specs.ohFields() {
@@ -186,22 +186,24 @@ func newPipe(qry, name string, specs specsMap, bSize int, fts sea.FTypes,
 //   - goodLoan
 //   - pass1Fields
 func pass1(specs specsMap, conn *chutils.Connect, log *os.File) error {
-	specs["goodLoan"], specs["where"] = specs.goodLoan(), ""
+	specs.assign("goodLoan", specs.goodLoan())
+	specs.assign("where", "")
 
 	// put user where1 key in "where"
 	specs.getWhere(1)
 
-	specs["fields"] = specs.pass1Fields()
+	specs.assign("fields", specs.pass1Fields())
 	qry := buildQuery(withPass1, specs)
 
-	sampleSize, e := strconv.ParseInt(specs["sampleSize1"], base10, bits32)
+	sampleSize, e := strconv.ParseInt(specs.getkeyVal("sampleSize1", true), base10, bits32)
 	if e != nil {
 		return e
 	}
 
-	gen := sampler.NewGenerator(qry, specs["pass1Sample"], specs["pass1Strat"], int(sampleSize), true, conn)
+	gen := sampler.NewGenerator(qry, specs.getkeyVal("pass1Sample", true),
+		specs.getkeyVal("pass1Strat", true), int(sampleSize), true, conn)
 
-	strats := toSlice(specs["strats1"], ",")
+	strats := toSlice(specs.getkeyVal("strats1", true), ",")
 
 	if e := gen.CalcRates(strats...); e != nil {
 		return e
@@ -211,7 +213,7 @@ func pass1(specs specsMap, conn *chutils.Connect, log *os.File) error {
 		return e
 	}
 
-	if e := gen.SampleStrats().Plot(specs["stratsDir"]+"pass1.html", specs.plotShow()); e != nil {
+	if e := gen.SampleStrats().Plot(specs.getkeyVal("stratsDir", true)+"pass1.html", specs.plotShow()); e != nil {
 		return e
 	}
 
@@ -239,21 +241,22 @@ func pass1(specs specsMap, conn *chutils.Connect, log *os.File) error {
 func pass2(specs specsMap, conn *chutils.Connect, log *os.File) error {
 	// put user where2 key in "where"
 	specs.getWhere(2)
-	specs["fields"] = fmt.Sprintf("%s, %s", specs.mtgFields(), specs.pass2Fields())
+	specs.assign("fields", fmt.Sprintf("%s, %s", specs.mtgFields(), specs.pass2Fields()))
 
 	// if there is no window, then withPass2 needs to add an arrayJoin
 	specs.windowExtras()
 
 	qry := buildQuery(withPass2, specs)
 
-	sampleSize, e := strconv.ParseInt(specs["sampleSize2"], base10, bits32)
+	sampleSize, e := strconv.ParseInt(specs.getkeyVal("sampleSize2", true), base10, bits32)
 	if e != nil {
 		return e
 	}
 
-	gen := sampler.NewGenerator(qry, specs["pass2Sample"], specs["pass2Strat"], int(sampleSize), true, conn)
+	gen := sampler.NewGenerator(qry, specs.getkeyVal("pass2Sample", true),
+		specs.getkeyVal("pass2Strat", true), int(sampleSize), true, conn)
 
-	strats := toSlice(specs["strats2"], ",")
+	strats := toSlice(specs.getkeyVal("strats2", true), ",")
 
 	if e := gen.CalcRates(strats...); e != nil {
 		return e
@@ -263,7 +266,7 @@ func pass2(specs specsMap, conn *chutils.Connect, log *os.File) error {
 		return e
 	}
 
-	if e := gen.SampleStrats().Plot(specs["stratsDir"]+"pass2.html", specs.plotShow()); e != nil {
+	if e := gen.SampleStrats().Plot(specs.getkeyVal("stratsDir", true)+"pass2.html", specs.plotShow()); e != nil {
 		return e
 	}
 
@@ -287,17 +290,17 @@ func pass2(specs specsMap, conn *chutils.Connect, log *os.File) error {
 //   - pass3Fields
 func pass3(specs specsMap, conn *chutils.Connect) error {
 	econTable, econFields := specs.econJoin()
-	specs["with"] = econTable
-	specs["fields"] = econFields + "," + specs.pass3Fields()
+	specs.assign("with", econTable)
+	specs.assign("fields", econFields+","+specs.pass3Fields())
 	qry := buildQuery(withPass3, specs)
 	rdr := s.NewReader(qry, conn)
-	rdr.Name = specs.outTable()
+	rdr.Name = specs.getkeyVal("outTable", true)
 
-	if e := rdr.Init(specs.tableKey(), chutils.MergeTree); e != nil {
+	if e := rdr.Init(specs.getkeyVal("tableKey", false), chutils.MergeTree); e != nil {
 		return e
 	}
 
-	if e := rdr.TableSpec().Create(conn, specs.outTable()); e != nil {
+	if e := rdr.TableSpec().Create(conn, specs.getkeyVal("outTable", true)); e != nil {
 		return e
 	}
 
