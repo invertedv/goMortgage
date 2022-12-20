@@ -102,7 +102,7 @@ func inits(host, user, pw, specsFile string, maxMemory, maxGroupBy int64) (specs
 		return nil, nil, nil, er
 	}
 
-	outDir := slash(specs.getkeyVal("outDir", true))
+	outDir := slash(specs.getVal("outDir", true))
 	switch specs.buildData() || specs.buildModel() {
 	case true:
 		// if we're building the data or the model, clean out the outDir
@@ -162,7 +162,7 @@ func inits(host, user, pw, specsFile string, maxMemory, maxGroupBy int64) (specs
 	specs.assign("curvesDir", dir)
 
 	// create inputModel subdirectory
-	if dir, e = makeSubDir(specs.getkeyVal("modelDir", true), "inputModels"); e != nil {
+	if dir, e = makeSubDir(specs.getVal("modelDir", true), "inputModels"); e != nil {
 		return nil, nil, nil, e
 	}
 	specs.assign("inputDir", dir)
@@ -177,7 +177,7 @@ func inits(host, user, pw, specsFile string, maxMemory, maxGroupBy int64) (specs
 		}
 
 		// load up the needed cts and cat feature list in this case
-		if er := specs.findFeatures(specs.getkeyVal("modelDir", true), true); er != nil {
+		if er := specs.findFeatures(specs.getVal("modelDir", true), true); er != nil {
 			return nil, nil, nil, er
 		}
 
@@ -201,7 +201,7 @@ func inits(host, user, pw, specsFile string, maxMemory, maxGroupBy int64) (specs
 	}
 
 	// load up required features from inputModels (there will be no model yet in modelDir() but inputModels may be populated)
-	if er := specs.findFeatures(specs.getkeyVal("modelDir", true), true); er != nil {
+	if er := specs.findFeatures(specs.getVal("modelDir", true), true); er != nil {
 		return nil, nil, nil, er
 	}
 
@@ -323,7 +323,7 @@ func plotCosts(fit *sea.Fit, costName string, specs specsMap) error {
 		Height:   specs.plotHeight(),
 		Width:    specs.plotWidth(),
 		Show:     specs.plotShow(),
-		FileName: specs.getkeyVal("costDir", true) + "modelSample.html",
+		FileName: specs.getVal("costDir", true) + "modelSample.html",
 	}, true); e != nil {
 		return e
 	}
@@ -341,7 +341,7 @@ func plotCosts(fit *sea.Fit, costName string, specs specsMap) error {
 		Height:   specs.plotHeight(),
 		Width:    specs.plotWidth(),
 		Show:     specs.plotShow(),
-		FileName: specs.getkeyVal("costDir", true) + "validationSample.html",
+		FileName: specs.getVal("costDir", true) + "validationSample.html",
 	}, true); e != nil {
 		return e
 	}
@@ -387,4 +387,45 @@ func inModel(input, feature string) bool {
 	}
 
 	return false
+}
+
+// joinString creates a comma separated string of old and new
+func joinString(old1, new1 string) string {
+	if old1 == "" {
+		return new1
+	}
+
+	return fmt.Sprintf("%s,%s", old1, new1)
+}
+
+// checkKey returns true if key is in possible.  The entries of possible may have a wild card.
+func checkKey(key string, possible []string) (ok bool) {
+	for _, poss := range possible {
+		if key == poss {
+			return true
+		}
+		if strings.Contains(poss, "*") {
+			root := strings.ReplaceAll(poss, "*", "")
+			if strings.Contains(key, root) {
+				return true
+			}
+		}
+	}
+
+	return false
+}
+
+// checker checks whether the needles are in the haystack, returns a list of those that are not
+func checker(needles, haystack string) (missing string) {
+	missing = ""
+	needSlc := strings.Split(strings.ReplaceAll(needles, "\n", ""), ",")
+	hayScl := strings.Split(strings.ReplaceAll(haystack, "\n", ""), ",")
+
+	for _, need := range needSlc {
+		if !checkKey(need, hayScl) {
+			missing = joinString(missing, need)
+		}
+	}
+
+	return missing
 }

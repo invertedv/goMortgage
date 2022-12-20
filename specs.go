@@ -17,6 +17,7 @@ const (
 	fannie  = "fannie"
 	freddie = "freddie"
 
+	// default values
 	plotWidth  = 1600.0
 	plotHeight = 1200.0
 	plotShow   = false
@@ -26,8 +27,80 @@ const (
 // accessing them elsewhere in the code.
 type specsMap map[string]string
 
+// assign assings val to key.
 func (sf specsMap) assign(key, val string) {
 	sf[key] = val
+}
+
+// getVal returns the value for key. If key is not in the map, it panics if
+// must=true, or returns "" o.w.
+func (sf specsMap) getVal(key string, must bool) string {
+	val, ok := sf[key]
+
+	if must && !ok {
+		panic(fmt.Sprintf("no entry for key %s", key))
+	}
+
+	return val
+}
+
+// check checks that required keys are available in sf
+func (sf specsMap) check() error {
+	const (
+		// required has the minimum field list must have at least these entries
+		required = "outDir"
+
+		requiredData = `
+          sampleSize1, strats1, sampleSize2, strats2, mtgDb, econDb, pass1Strat, pass1Sample,
+          pass2Strat, pass2Sample, mtgFields, econFields, target, targetType, outTable`
+
+		requiredModel = "layer1, batchSize, epochs, targetType, modelQuery, target, targetType"
+
+		requiredAssess = "assessQuery"
+
+		requiredBias = "biasQuery, biasDir"
+	)
+
+	// see if all the keys are valid keys
+	if miss := checker(sf.allKeys(), allKeys); miss != "" {
+		return fmt.Errorf("unknown keys: %s", miss)
+	}
+
+	reqs := required
+
+	if !sf.buildData() && !sf.buildModel() && !sf.biasCorrect() && !sf.assessModel() {
+		return fmt.Errorf("nothing to do")
+	}
+
+	// check required keys
+	for ind, todo := range []bool{sf.buildData(), sf.buildModel(), sf.biasCorrect(), sf.assessModel()} {
+		if todo {
+			reqs = joinString(reqs, strings.ReplaceAll([]string{requiredData, requiredModel, requiredBias, requiredAssess}[ind], " ", ""))
+		}
+	}
+
+	if miss := checker(reqs, sf.allKeys()); miss != "" {
+		return fmt.Errorf("missing keys: %s", miss)
+	}
+
+	sf["outDir"] = slash(sf["outDir"])
+
+	// check window: value
+	if _, e := sf.window(); e != nil {
+		return e
+	}
+
+	if e := sf.checkInputModels(); e != nil {
+		return e
+	}
+
+	for _, item := range append(sf.slicer("curves"), sf.slicer("assess")...) {
+		if item.feature == "" || len(item.target) == 0 {
+			return fmt.Errorf("curves for %s missing target or slicer", item.name)
+		}
+	}
+
+	return nil
 }
 
 // learnRate returns the starting and ending learning rate
@@ -93,40 +166,6 @@ type slices struct {
 	target    []int  // target values as []int
 }
 
-// l2 returns L2 regularization parameter
-func (sf specsMap) l2() (float64, error) {
-	l2Str, ok := sf["l2Reg"]
-	if !ok {
-		return 0.0, nil
-	}
-
-	l2, err := strconv.ParseFloat(strings.ReplaceAll(l2Str, " ", ""), bits64)
-	if err != nil {
-		return 0.0, err
-	}
-
-	if l2 <= 0.0 {
-		return 0.0, fmt.Errorf("l2Reg must be positive")
-	}
-	return l2, nil
-}
-
-// gDir returns and creates the directory to place the graphs for sl
-func (sf specsMap) gDir(dirType string, sl *slices) (path string, err error) {
-	baseDir := ""
-	switch dirType {
-	case "assess":
-		baseDir = sf["valDir"]
-	case "marginal":
-		baseDir = sf["margDir"]
-	default:
-		return "", fmt.Errorf("(specsMap) gDir: invalid option %s", dirType)
-	}
-	path, err = makeSubDir(baseDir, sl.shortName)
-
-	return path, err
-}
-
 // slicer returns an array of slicers specified in specs for the base category (assess or curves)
 func (sf specsMap) slicer(base string) []slices {
 	vals := make([]slices, 0)
@@ -142,7 +181,7 @@ func (sf specsMap) slicer(base string) []slices {
 			return append(vals, item)
 		}
 		shortName := k[len(keyFind):]
-		targetStr := sf.getkeyVal(fmt.Sprintf("%sTarget%s", base, shortName), false)
+		targetStr := sf.getVal(fmt.Sprintf("%sTarget%s", base, shortName), false)
 		if targetStr == "" {
 			item = slices{name: k, feature: "", targetStr: "", target: nil}
 			return append(vals, item)
@@ -159,7 +198,7 @@ func (sf specsMap) slicer(base string) []slices {
 		}
 		item = slices{
 			name:      v,
-			feature:   sf.getkeyVal(fmt.Sprintf("%sSlicer%s", base, shortName), false),
+			feature:   sf.getVal(fmt.Sprintf("%sSlicer%s", base, shortName), false),
 			shortName: shortName,
 			targetStr: targetStr,
 			target:    trgs,
@@ -182,6 +221,24 @@ func (sf specsMap) layers() (model []string) {
 		lyr++
 	}
 	return
+}
+
+// l2 returns L2 regularization parameter
+func (sf specsMap) l2() (float64, error) {
+	l2Str, ok := sf["l2Reg"]
+	if !ok {
+		return 0.0, nil
+	}
+
+	l2, err := strconv.ParseFloat(strings.ReplaceAll(l2Str, " ", ""), bits64)
+	if err != nil {
+		return 0.0, err
+	}
+
+	if l2 <= 0.0 {
+		return 0.0, fmt.Errorf("l2Reg must be positive")
+	}
+	return l2, nil
 }
 
 // batchSize returns batch size
@@ -231,6 +288,22 @@ func (sf specsMap) plotShow() bool {
 		return plotShow
 	}
 	return show == yes
+}
+
+// gDir returns and creates the directory to place the graphs for sl
+func (sf specsMap) gDir(dirType string, sl *slices) (path string, err error) {
+	baseDir := ""
+	switch dirType {
+	case "assess":
+		baseDir = sf["valDir"]
+	case "marginal":
+		baseDir = sf["margDir"]
+	default:
+		return "", fmt.Errorf("(specsMap) gDir: invalid option %s", dirType)
+	}
+	path, err = makeSubDir(baseDir, sl.shortName)
+
+	return path, err
 }
 
 // plotWidth returns plot width (in pixels)
@@ -379,124 +452,14 @@ func (sf specsMap) inputModels() error {
 	return nil
 }
 
-func checkKey(key string, possible []string) (ok bool) {
-	for _, poss := range possible {
-		if key == poss {
-			return true
-		}
-		if strings.Contains(poss, "*") {
-			root := strings.ReplaceAll(poss, "*", "")
-			if strings.Contains(key, root) {
-				return true
-			}
-		}
+// allKeys returns a comma-separated string of all the keys in sf
+func (sf specsMap) allKeys() string {
+	ak := ""
+	for key := range sf {
+		ak = joinString(ak, key)
 	}
 
-	return false
-}
-
-func (sf specsMap) checkKeys() (ok bool) {
-	possible := strings.Split(strings.ReplaceAll(allKeys, "\n", ""), ",")
-	for k := range sf {
-		if !checkKey(k, possible) {
-			fmt.Printf("warning: unknown key %s\n", k)
-		}
-	}
-
-	return true
-}
-
-// check checks that required keys are available in sf
-func (sf specsMap) check() error {
-	const (
-		// required has the minimum field list must have at least these entries
-		required = "outDir"
-
-		requiredData = `
-          sampleSize1, strats1, sampleSize2, strats2, mtgDb, econDb, pass1Strat, pass1Sample,
-          pass2Strat, pass2Sample, mtgFields, econFields, target, targetType, outTable`
-
-		requiredModel = `
-          layer1, batchSize, epochs, targetType, modelQuery, target, targetType`
-
-		requiredAssess = "assessQuery"
-
-		requiredBias = "biasQuery, biasDir"
-	)
-
-	if !sf.checkKeys() {
-		panic("unknown keys")
-	}
-
-	// check for mandatory keys
-	reqd := toSlice(required, ",")
-	for _, req := range reqd {
-		_, ok := sf[req]
-		if !ok {
-			return fmt.Errorf("required key %s not in specs file", req)
-		}
-	}
-
-	sf["outDir"] = slash(sf["outDir"])
-
-	if !sf.buildData() && !sf.buildModel() && !sf.biasCorrect() && !sf.assessModel() {
-		return fmt.Errorf("nothing to do")
-	}
-
-	// check for keys by task
-	reqs := make([]string, 0)
-	if sf.buildData() {
-		reqs = append(reqs, requiredData)
-
-		// check if window value is valid, if present
-		if _, e := sf.window(); e != nil {
-			return e
-		}
-	}
-
-	if sf.buildModel() {
-		reqs = append(reqs, requiredModel)
-	}
-
-	if sf.biasCorrect() {
-		reqs = append(reqs, requiredBias)
-	}
-
-	if sf.assessModel() {
-		reqs = append(reqs, requiredAssess)
-	}
-
-	reqd = toSlice(strings.Join(reqs, ","), ",")
-	for _, req := range reqd {
-		_, ok := sf[req]
-		if !ok {
-			return fmt.Errorf("required key %s not in specs file", req)
-		}
-	}
-
-	if e := sf.checkInputModels(); e != nil {
-		return e
-	}
-
-	// The remainder is specific to assess
-	if !sf.assessModel() {
-		return nil
-	}
-
-	// check more complicated keys that are used in assessment
-	for _, item := range sf.slicer("curves") {
-		if item.feature == "" || len(item.target) == 0 {
-			return fmt.Errorf("curves for %s missing target or slicer", item.name)
-		}
-	}
-
-	for _, item := range sf.slicer("assess") {
-		if item.feature == "" || len(item.target) == 0 {
-			return fmt.Errorf("curves for %s missing target or slicer", item.name)
-		}
-	}
-
-	return nil
+	return ak
 }
 
 // ctsFeatures returns a slice of continuous features in the model
@@ -632,17 +595,8 @@ func (sf specsMap) modelRoot() string {
 	return sf["modelDir"] + "model"
 }
 
-func (sf specsMap) getkeyVal(key string, must bool) string {
-	val, ok := sf[key]
-
-	if must && !ok {
-		panic(fmt.Sprintf("no entry for key %s", key))
-	}
-
-	return val
-}
-
-// allFields returns a slice of all the fields required by the run
+// allFields returns a slice of all the fields required by the run.
+// This does not, however, include values in strat1: or strat2:.
 func (sf specsMap) allFields() []string {
 	aFld := sf.allFeatures()
 	aFld = append(aFld, sf.assessFields()...)
@@ -846,7 +800,7 @@ func (sf specsMap) findFeatures(modelDir string, top bool) error {
 	fileName = fmt.Sprintf("%sfieldDefs.jsn", modelDir)
 	input := ""
 	if top {
-		if modSpec, err = sea.LoadModSpec(fmt.Sprintf("%smodelS.nn", sf.getkeyVal("modelDir", true))); err != nil {
+		if modSpec, err = sea.LoadModSpec(fmt.Sprintf("%smodelS.nn", sf.getVal("modelDir", true))); err != nil {
 			return err
 		}
 		input = modSpec[0]
@@ -1114,11 +1068,11 @@ func (sf specsMap) pass3Fields() string {
 //   - as-of date
 //   - target date
 //
-// To accomodate this, the field list has the form:
+// To accommodate this, the field list has the form:
 //
 //	<corr><base field> AS <pre><base field>
 //
-// where <base field> is the root field (e.g. HPI), <corr> is the corrlation for the table (since it's joined 3 times)
+// where <base field> is the root field (e.g. HPI), <corr> is the correlation for the table (since it's joined 3 times)
 // and <pre> is a prefix (org, ao, trg)
 func (sf specsMap) econJoin() (table, fields string) {
 	var fieldList string

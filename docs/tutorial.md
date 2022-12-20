@@ -483,7 +483,7 @@ Decile Graphs
 </div>
 </div>
 
-The [segment plots]({{ site.baseurl }}/plots.html#segment-plots) for the same fetures
+The [segment plots]({{ site.baseurl }}/plots.html#segment-plots) for the same features
 are below. For current loans, FICO covers a slightly larger range than Eltv but for current loans
 it works the other way.  The intuition is that knowing the borrower is 2 months delinquent on this loan
 is more relevant than knowing their FICO at some point in the past. Similar intuition applies to knowing

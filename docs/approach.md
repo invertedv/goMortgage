@@ -65,7 +65,7 @@ goMortgage produces a variety of model assessments, mostly graphical, to provide
 performance and relationships of inputs to output.
 
 Given the approach of goMortgage to model building, one can do something that's very cool.  It is
-straghtforward to build the model on data up to time *t* and assess it on data after time *t*.
+straightforward to build the model on data up to time *t* and assess it on data after time *t*.
 In fact, one can march through time conducting this process to gain insight into how the model
 performs out of time period in a variety of economic environments. One can even perform experiments like
 restricting the assessment to loans, say, in California.

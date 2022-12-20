@@ -136,7 +136,7 @@ func newPipe(qry, name string, specs specsMap, bSize int, fts sea.FTypes,
 	sea.WithCats(specs.allCat()...)(pipe)
 	sea.WithNormalized(specs.ctsFeatures()...)(pipe)
 	if specs.targetType() == sea.FRCts {
-		sea.WithNormalized(specs.getkeyVal("target", true))(pipe)
+		sea.WithNormalized(specs.getVal("target", true))(pipe)
 	}
 
 	for _, cat := range specs.ohFields() {
@@ -195,15 +195,15 @@ func pass1(specs specsMap, conn *chutils.Connect, log *os.File) error {
 	specs.assign("fields", specs.pass1Fields())
 	qry := buildQuery(withPass1, specs)
 
-	sampleSize, e := strconv.ParseInt(specs.getkeyVal("sampleSize1", true), base10, bits32)
+	sampleSize, e := strconv.ParseInt(specs.getVal("sampleSize1", true), base10, bits32)
 	if e != nil {
 		return e
 	}
 
-	gen := sampler.NewGenerator(qry, specs.getkeyVal("pass1Sample", true),
-		specs.getkeyVal("pass1Strat", true), int(sampleSize), true, conn)
+	gen := sampler.NewGenerator(qry, specs.getVal("pass1Sample", true),
+		specs.getVal("pass1Strat", true), int(sampleSize), true, conn)
 
-	strats := toSlice(specs.getkeyVal("strats1", true), ",")
+	strats := toSlice(specs.getVal("strats1", true), ",")
 
 	if e := gen.CalcRates(strats...); e != nil {
 		return e
@@ -213,7 +213,7 @@ func pass1(specs specsMap, conn *chutils.Connect, log *os.File) error {
 		return e
 	}
 
-	if e := gen.SampleStrats().Plot(specs.getkeyVal("stratsDir", true)+"pass1.html", specs.plotShow()); e != nil {
+	if e := gen.SampleStrats().Plot(specs.getVal("stratsDir", true)+"pass1.html", specs.plotShow()); e != nil {
 		return e
 	}
 
@@ -248,15 +248,15 @@ func pass2(specs specsMap, conn *chutils.Connect, log *os.File) error {
 
 	qry := buildQuery(withPass2, specs)
 
-	sampleSize, e := strconv.ParseInt(specs.getkeyVal("sampleSize2", true), base10, bits32)
+	sampleSize, e := strconv.ParseInt(specs.getVal("sampleSize2", true), base10, bits32)
 	if e != nil {
 		return e
 	}
 
-	gen := sampler.NewGenerator(qry, specs.getkeyVal("pass2Sample", true),
-		specs.getkeyVal("pass2Strat", true), int(sampleSize), true, conn)
+	gen := sampler.NewGenerator(qry, specs.getVal("pass2Sample", true),
+		specs.getVal("pass2Strat", true), int(sampleSize), true, conn)
 
-	strats := toSlice(specs.getkeyVal("strats2", true), ",")
+	strats := toSlice(specs.getVal("strats2", true), ",")
 
 	if e := gen.CalcRates(strats...); e != nil {
 		return e
@@ -266,7 +266,7 @@ func pass2(specs specsMap, conn *chutils.Connect, log *os.File) error {
 		return e
 	}
 
-	if e := gen.SampleStrats().Plot(specs.getkeyVal("stratsDir", true)+"pass2.html", specs.plotShow()); e != nil {
+	if e := gen.SampleStrats().Plot(specs.getVal("stratsDir", true)+"pass2.html", specs.plotShow()); e != nil {
 		return e
 	}
 
@@ -294,13 +294,13 @@ func pass3(specs specsMap, conn *chutils.Connect) error {
 	specs.assign("fields", econFields+","+specs.pass3Fields())
 	qry := buildQuery(withPass3, specs)
 	rdr := s.NewReader(qry, conn)
-	rdr.Name = specs.getkeyVal("outTable", true)
+	rdr.Name = specs.getVal("outTable", true)
 
-	if e := rdr.Init(specs.getkeyVal("tableKey", false), chutils.MergeTree); e != nil {
+	if e := rdr.Init(specs.getVal("tableKey", false), chutils.MergeTree); e != nil {
 		return e
 	}
 
-	if e := rdr.TableSpec().Create(conn, specs.getkeyVal("outTable", true)); e != nil {
+	if e := rdr.TableSpec().Create(conn, specs.getVal("outTable", true)); e != nil {
 		return e
 	}
 

@@ -22,7 +22,7 @@ func modelSpec(specs specsMap) (modSpec sea.ModSpec, err error) {
 		catsOh = append(catsOh, field)
 	}
 
-	target := specs.getkeyVal("target", true)
+	target := specs.getVal("target", true)
 	if specs.targetType() == sea.FRCat {
 		target += "Oh"
 	}
@@ -43,7 +43,7 @@ func modelSpec(specs specsMap) (modSpec sea.ModSpec, err error) {
 // getModel either creates or loads the model to fit
 func getModel(specs specsMap, pipe sea.Pipeline) (*sea.NNModel, error) {
 	// path will be the path to a model whose values we'll use as starting values
-	if path := specs.getkeyVal("startFrom", false); path != "" {
+	if path := specs.getVal("startFrom", false); path != "" {
 		path = fmt.Sprintf("%smodel", slash(path))
 		nnModel, e := sea.LoadNN(path, pipe, true)
 		if e != nil {
@@ -68,7 +68,7 @@ func getModel(specs specsMap, pipe sea.Pipeline) (*sea.NNModel, error) {
 // getFTs gets the FTypes to use for all the pipelines if we're starting from an existing model.
 // If we're not, nil is returned.
 func getFts(specs specsMap) (sea.FTypes, error) {
-	if path := specs.getkeyVal("startFrom", false); path != "" {
+	if path := specs.getVal("startFrom", false); path != "" {
 		path = fmt.Sprintf("%sfieldDefs.jsn", slash(path))
 
 		return sea.LoadFTypes(path)
@@ -116,7 +116,7 @@ func model(specs specsMap, conn *chutils.Connect, log *os.File) error {
 		return e
 	}
 
-	if er := fts.Save(specs.getkeyVal("modelDir", true) + "fieldDefs.jsn"); er != nil {
+	if er := fts.Save(specs.getVal("modelDir", true) + "fieldDefs.jsn"); er != nil {
 		return er
 	}
 

@@ -21,7 +21,7 @@ import (
 // objective function for bias correction
 type objFn func(x []float64) float64
 
-// getOutLayer retrives the output layer from modSpec and returns the layer and its position in modSpec.
+// getOutLayer retrieves the output layer from modSpec and returns the layer and its position in modSpec.
 // The nnModel parameters are indexed by the layer position.
 func getOutLayer(modSpec sea.ModSpec) (outLayer *sea.FCLayer, outLayLoc int) {
 	for outLayLoc = len(modSpec); outLayLoc >= 0; outLayLoc-- {
@@ -72,7 +72,7 @@ func biasCorrect(specs specsMap, conn *chutils.Connect, log *os.File) error {
 	start := time.Now()
 	logger(log, fmt.Sprintf("starting bias correction @ %s", start.Format(time.UnixDate)), true)
 
-	if fts, e = sea.LoadFTypes(specs.getkeyVal("modelDir", true) + "fieldDefs.jsn"); e != nil {
+	if fts, e = sea.LoadFTypes(specs.getVal("modelDir", true) + "fieldDefs.jsn"); e != nil {
 		return e
 	}
 
@@ -155,7 +155,7 @@ func biasCorrect(specs specsMap, conn *chutils.Connect, log *os.File) error {
 	var loc string
 
 	// save our results.  We'll copy over everything from the source model and then save the NN over the top of it.
-	if loc, e = makeSubDir(specs.getkeyVal("outDir", true), specs.getkeyVal("biasDir", false)); e != nil {
+	if loc, e = makeSubDir(specs.getVal("outDir", true), specs.getVal("biasDir", false)); e != nil {
 		return e
 	}
 
@@ -163,7 +163,7 @@ func biasCorrect(specs specsMap, conn *chutils.Connect, log *os.File) error {
 		return e
 	}
 
-	if ex := copyFiles(specs.getkeyVal("modelDir", true), loc); ex != nil {
+	if ex := copyFiles(specs.getVal("modelDir", true), loc); ex != nil {
 		return ex
 	}
 

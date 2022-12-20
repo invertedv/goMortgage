@@ -22,11 +22,11 @@ func assessModel(specs specsMap, conn *chutils.Connect, log *os.File) error {
 	start := time.Now()
 	logger(log, fmt.Sprintf("starting assessment @ %s", start.Format(time.UnixDate)), true)
 
-	if fts, e = sea.LoadFTypes(specs.getkeyVal("modelDir", true) + "fieldDefs.jsn"); e != nil {
+	if fts, e = sea.LoadFTypes(specs.getVal("modelDir", true) + "fieldDefs.jsn"); e != nil {
 		return e
 	}
 
-	obsFt := fts.Get(specs.getkeyVal("target", true))
+	obsFt := fts.Get(specs.getVal("target", true))
 
 	// assess pipeline
 	if assessPipe, e = newPipe(specs.getQuery("assess"), "Assess data", specs, 0, fts, conn); e != nil {
@@ -80,14 +80,14 @@ func curves(pipe sea.Pipeline, specs specsMap, obsFt *sea.FType, curveSpec *slic
 
 	pd := &sea.PlotDef{
 		Show:     specs.plotShow(),
-		Title:    fmt.Sprintf("%s<br>%s", specs.getkeyVal("title", false), curveSpec.name),
+		Title:    fmt.Sprintf("%s<br>%s", specs.getVal("title", false), curveSpec.name),
 		XTitle:   curveSpec.feature,
 		YTitle:   "Fit and Actual",
 		STitle:   "",
 		Legend:   true,
 		Height:   specs.plotHeight(),
 		Width:    specs.plotWidth(),
-		FileName: fmt.Sprintf("%s%s.html", specs.getkeyVal("curvesDir", true), curveSpec.shortName),
+		FileName: fmt.Sprintf("%s%s.html", specs.getVal("curvesDir", true), curveSpec.shortName),
 	}
 
 	modelLoc := specs.modelRoot()
@@ -205,7 +205,7 @@ func marginal(specs specsMap, valSpec *slices, baseFt, obsFt *sea.FType, fts sea
 		}
 
 		for _, fld := range specs.allFeatures() {
-			pd.Title = fmt.Sprintf("%s<br>metric %s restrict %s = %v", specs.getkeyVal("title", false), valSpec.name, valSpec.feature, lvl)
+			pd.Title = fmt.Sprintf("%s<br>metric %s restrict %s = %v", specs.getVal("title", false), valSpec.name, valSpec.feature, lvl)
 			pd.FileName = fmt.Sprintf("%s%s.html", pathMarg, fld)
 			modelLoc := specs.modelRoot()
 			fldName := fld
@@ -293,7 +293,7 @@ func assess(pipe sea.Pipeline, specs specsMap, obsFt *sea.FType, segSpec *slices
 	// overall assessment
 	switch obsFt.Role {
 	case sea.FRCat:
-		pd.Title, pd.FileName = fmt.Sprintf("%s<br>KS-%s", specs.getkeyVal("title", false), segSpec.name), graphDir+"ksAll.html"
+		pd.Title, pd.FileName = fmt.Sprintf("%s<br>KS-%s", specs.getVal("title", false), segSpec.name), graphDir+"ksAll.html"
 		ks, _, _, e1 := sea.KS(xy, pd)
 		if e1 != nil {
 			return e1
@@ -304,7 +304,7 @@ func assess(pipe sea.Pipeline, specs specsMap, obsFt *sea.FType, segSpec *slices
 		logger(log, fmt.Sprintf("\n\nModel Assessment\n R-Squared %0.1f%%\n\n", sea.R2(obs, fit)), true)
 	}
 
-	pd.Title, pd.FileName = fmt.Sprintf("%s<br>Decile-%s", specs.getkeyVal("title", false), segSpec.name), graphDir+"decileAll.html"
+	pd.Title, pd.FileName = fmt.Sprintf("%s<br>Decile-%s", specs.getVal("title", false), segSpec.name), graphDir+"decileAll.html"
 	e = sea.Decile(xy, pd)
 	if e != nil {
 		return e
@@ -330,7 +330,7 @@ func assess(pipe sea.Pipeline, specs specsMap, obsFt *sea.FType, segSpec *slices
 		}
 
 		pltFile := fmt.Sprintf("%sdecileALL.html", pathVal)
-		pltTitle := fmt.Sprintf("%s<br>%s<br>restrict %s", specs.getkeyVal("title", false), segSpec.name, baseSl.Title())
+		pltTitle := fmt.Sprintf("%s<br>%s<br>restrict %s", specs.getVal("title", false), segSpec.name, baseSl.Title())
 		pd.YTitle, pd.XTitle, pd.STitle = "", "", ""
 
 		// get fitted and observed values
@@ -349,7 +349,7 @@ func assess(pipe sea.Pipeline, specs specsMap, obsFt *sea.FType, segSpec *slices
 
 		if obsFt.Role == sea.FRCat {
 			ksFile := fmt.Sprintf("%sksALL.html", pathVal)
-			ksTitle := fmt.Sprintf("%s<br>%s<br>restrict %s", specs.getkeyVal("title", false), segSpec.name, baseSl.Title())
+			ksTitle := fmt.Sprintf("%s<br>%s<br>restrict %s", specs.getVal("title", false), segSpec.name, baseSl.Title())
 			pd.FileName, pd.Title = ksFile, ksTitle
 
 			if _, _, _, e = sea.KS(xy, pd); e != nil {
@@ -371,7 +371,7 @@ func assess(pipe sea.Pipeline, specs specsMap, obsFt *sea.FType, segSpec *slices
 
 			pltFile = fmt.Sprintf("%sdecile%s.html", pathVal, fld)
 			pltTitle = fmt.Sprintf("%s<br>Field %s Metric %s<br>Where %s",
-				specs.getkeyVal("title", false), fld, segSpec.name, baseSl.Title())
+				specs.getVal("title", false), fld, segSpec.name, baseSl.Title())
 			pd.YTitle, pd.XTitle = "", ""
 			pd.FileName, pd.Title, pd.STitle = pltFile, pltTitle, ""
 			if e := sea.SegPlot(segPipe, "obs", "fit", fld, pd, &minVal, &maxVal); e != nil {

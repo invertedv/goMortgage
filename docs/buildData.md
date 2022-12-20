@@ -165,10 +165,10 @@ The model will be estimating the probability that this event occurs.
 The fields available in goMortage include most of the static fields in the loan-level data, select fields
 from the non-loan data and calculated fields.  These last two are detailed below.
 
-#### Nominclature
+#### Nomenclature
 {: .fs-2 .fw-700 }
 
-The following nominclature has been adopted for fields built by goMortgage:
+The following nomenclature has been adopted for fields built by goMortgage:
 
 - Time-varying fields at the first-pay date are prefixed by "org"
 - Time-varying fields at the as-of date are prefixed by "ao".
@@ -176,7 +176,7 @@ The following nominclature has been adopted for fields built by goMortgage:
 - Time-varying fields at Jan. 2020 are prefixed by "y20"
 - Fields that serve as the target of models are prefixed by "target"
 
-The last is not hard and fast, since goMortage doesn't care but is helpful when looking at fields.
+The last is not hard and fast, since goMortgage doesn't care but is helpful when looking at fields.
 
 #### Targets
 {: .fs-2 .fw-700 }
@@ -217,8 +217,8 @@ These fields are populated for all time periods:
 - PropVal. Estimated updated property value.
  
 These are also found at select time periods:
-- aoEltv. Estimated LTV at as-of date (based on amorized balance and updated property value)
-- trgEltv. Estimated LTV at target date (based on amorized balance and updated property value)
+- aoEltv. Estimated LTV at as-of date (based on amortized balance and updated property value)
+- trgEltv. Estimated LTV at target date (based on amortized balance and updated property value)
 - trgPti50. From IRS data, payment to estimated median income
 - trgRefiIncentive. Refi incentive calculated as the annual savings in payments if refi at the prevailing
 conforming rate (same term as current loan)

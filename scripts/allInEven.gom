@@ -1,6 +1,6 @@
 title: All-In model, Even Sampling of Target
 outDir: /home/will/goMortgage/allInEven
-buildData: yes
+buildData: no
 buildModel: yes
 assessModel: yes
 
