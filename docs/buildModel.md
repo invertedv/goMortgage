@@ -40,7 +40,7 @@ models:
   <a href="https://github.com/invertedv/goMortgage/blob/master/scripts/dq.gom" target="_blank" rel="noopener noreferrer" >delinquency</a>
   model.
 - regression models. A regression model is fit to a single-valued, continuous target. An example is the
-  <a href="https://github.com/invertedv/goMortgage/blob/master/scripts/netPro.gom" target="_blank" rel="noopener noreferrer" >net recovery</a>
+  <a href="https://github.com/invertedv/goMortgage/blob/master/scripts/netPro.gom" target="_blank" rel="noopener noreferrer" >net proceeds</a>
   model.
 - scoring models. A scoring model is built on a binary target that, within a fixed time window, 
   is 1 if an event occurs and 0 if not. The
