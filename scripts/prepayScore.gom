@@ -101,7 +101,7 @@ addlCat: aoMaxDq12, vintage, aoDqCap6, numBorr
 addlKeep: lnId, aoDt, trgDt
 
 // Additional fields for the assessment.
-assessAddl: aoIncome50, aoEItb50,  trgPti10, trgPti90, ltv, aoMaxDq12, trgUpbExp, state, aoIncome90, msaLoc,
+assessAddl: aoIncome50, ltv, aoMaxDq12, trgUpbExp, state, aoIncome90, msaLoc,
   aoPropVal, trgPropVal, vintage
 
 // Run a by-feature assessment that is sliced by aoDqCap6

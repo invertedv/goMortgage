@@ -1,6 +1,6 @@
 title: DQ model
 outDir: /home/will/goMortgage/dq
-buildData: yes
+buildData: no
 buildModel: yes
 assessModel: yes
 

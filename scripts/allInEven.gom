@@ -37,7 +37,7 @@ layer2: FC(size:20, activation:relu)
 layer3: FC(size:20, activation:relu)
 layer4: FC(size:15, activation:softmax)
 batchSize: 5000
-epochs: 5000
+epochs: 1500
 earlyStopping: 40
 learningRateStart: .0003
 learningRateEnd: .0001
