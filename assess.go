@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"math"
 	"os"
+	"runtime"
 	"time"
 
 	grob "github.com/MetalBlueberry/go-plotly/graph_objects"
@@ -41,6 +42,7 @@ func assessModel(specs specsMap, conn *chutils.Connect, log *os.File) error {
 		if e := curves(assessPipe, specs, obsFt, &sl); e != nil {
 			return e
 		}
+		runtime.GC()
 	}
 
 	// Marginal and KS/Decile/SegPlot plots
@@ -54,10 +56,12 @@ func assessModel(specs specsMap, conn *chutils.Connect, log *os.File) error {
 		if e := marginal(specs, &sl, baseFt, obsFt, fts, conn); e != nil {
 			return e
 		}
+		runtime.GC()
 
 		if e := assess(assessPipe, specs, obsFt, &sl, log); e != nil {
 			return e
 		}
+		runtime.GC()
 	}
 
 	// save assess data & model values back to ClickHouse
@@ -314,6 +318,7 @@ func assess(pipe sea.Pipeline, specs specsMap, obsFt *sea.FType, segSpec *slices
 	if e != nil {
 		return e
 	}
+	runtime.GC()
 
 	// run through the values we're slicing on
 	for baseSl.Iter() {
