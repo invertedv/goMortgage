@@ -856,14 +856,20 @@ func (sf specsMap) findFeatures(modelDir string, top bool) error {
 	return nil
 }
 
-// haveFeature returns true of feature is in one of these keys: cat, cts, addlCat, addlKeep
 func (sf specsMap) haveFeature(feature string) bool {
-	keys := []string{"cat", "cts", "addlCat", "addlKeep"}
+	keys := []string{"cat", "cts", "addlCat", "addlKeep", "emb"}
 	for _, key := range keys {
 		if val, ok := sf[key]; ok {
 			vals := strings.Split(val, ",")
+			if len(vals) == 1 {
+				vals = strings.Split(val, ";")
+			}
 			for _, v := range vals {
-				if v == feature {
+				v1 := strings.Trim(v, " ")
+				if ind := strings.Index(v1, "{"); ind > 0 {
+					v1 = strings.Trim(v1[:ind], " ")
+				}
+				if v1 == feature {
 					return true
 				}
 			}
@@ -928,13 +934,14 @@ func readSpecsMap(specFile string) (specsMap, error) {
 			return nil, fmt.Errorf("bad key val: %s in specs file %s", nextLine, specFile)
 		}
 
-		key := strings.ReplaceAll(kv[0], " ", "")
+		base := strings.ReplaceAll(kv[0], " ", "")
+		key := base
 
 		// some keys might have duplicates: "inputModels" may, for instance
 		ind := 0
 		for _, ok := sMap[key]; ok; _, ok = sMap[key] {
 			ind++
-			key = fmt.Sprintf("%s%d", key, ind)
+			key = fmt.Sprintf("%s%d", base, ind)
 		}
 
 		sMap[key] = strings.TrimLeft(kv[1], " ")
